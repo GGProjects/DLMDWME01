@@ -1,6 +1,3 @@
 
-venv/*
-functionfinder.egg*
-.spypro*
-*./__pycache__
-__py*
+.Rproj.user
+DLMDWME01.Rproj
