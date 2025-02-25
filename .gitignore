@@ -4,3 +4,5 @@ functionfinder.egg*
 .spypro*
 *./__pycache__
 __py*
+.Rproj.user
+.Rproj*
