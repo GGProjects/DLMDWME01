@@ -1,0 +1,89 @@
+\chapter{Das Vorhersagemodell}
+
+\section{Organisiere} das Projekt mithilfe der CRISP-DM oder der MS Team Data Science Methode. Mache einen Vorschlag, wie die Ordnerstruktur eines Git-Repositories für das Projekt aufgebaut werden soll. Beachte, dass Du den finalen Code des Projekts nicht nach dieser Ordnerstruktur aufbauen musst. 
+
+Warum für TDSP entschieden
+moderner - optimiert für agile Entwicklung - gegenständliches Projekt hat ebenfalls Anfang und Ende - flexiblere Gestaltung des Arbeitsprozesses da alle großen \glqq Überschriften\grqq\ von einander abhängen (oder so...)
+
+Der Link zu TDSP aus dem Studienscript, aber auch von den referenzierenden GitHub-Seiten aus ist auf Microsoft nicht mehr verfügbar. Das stattdessen angezeigte Dokument AI-Implementierung enthält zwar einen Verweis auf TDSP mit einem Link, dieser führt jedoch ebenfalls wieder zum selben AI-Implementierungsdokument. => Anm: schnell verändernde Branche
+
+Schritte TDSP \citep{noauthor_microsoft-tdspdocslifecycle-detailmd_nodate}
+%\begin{figure}[h]
+%\centering
+%\caption{Darstellung des Team Data Science Prozesses}
+%\includegraphics[width=15cm]{resources/tdsp.png}\\
+%Quelle: \cite{noauthor_microsoft-tdspdocslifecycle-detailmd_nodate}
+%\label{fig:tdsp}
+%\end{figure}
+
+\subsection{Business Understanding} (Referenz auf vorangegangene Arbeiten)
+\subsection{Data Acquisition and Understanding}
+Referenz UseCase Analyse
+Bestehende Daten und Hinweise auf mögliche Erweiterung
+Explorative Datenanalyse
+
+
+\subsection{Modeling}
+Referenz UseCase Analyse
+Referenz Monitoring (UseCase Analyse)
+
+
+
+
+\subsection{Deployment}
+Referenz Monitoring (UseCase Analyse)
+Referenz Projektplanung
+
+\subsection{Customer Acceptance}
+Referenz Risiko in der Projektplanung
+
+\subsection{Ordnerstruktur}
+
+Git Link
+Das Programm wurde vom Autor mit dem Namen \emph{\glqq functionfinder\grqq} betitelt und steht auf GitHub unter dem Link \begin{center}\url{https://github.com/GGProjects/DLMDWPMP01}\end{center} zum Download zur Verfügung.
+
+ Die weitere Ordnerstruktur orientiert sich an einem Blog-Post von \cite{henk_griffioen_how_2017}, der, nach Meinung des Autors, ein leicht verständliches Framework für Pythonprojekte bietet. Bereitgestellt über \citep{griffioen_hgrifexample-project_2023}
+
+Fusioniert mit \citep{noauthor_azureazure-tdsp-projecttemplate_2025} \colorbox{hellrot}{...}
+Umsetzung nicht in einer Azure Umgebung, daher diesbezgl modifiziert.
+
+
+
+In der nachfolgenden Abbildung werden die wesentlichen Ordner und Dateien der bereitgestellten Programmstruktur dargestellt. Hervorzuheben ist hierbei das Package \emph{functionfinder}, das sämtliche Pythonmodule beinhaltet, die für die Programmfunktionalität verantwortlich sind, sowie das Modul \emph{ffrunner}, über das die eigentliche Ausführung des Programmes gestartet wird.
+Die übrigen Verzeichnisse des Projekts stehen für die bereitgestellten Daten (\emph{data}), die Dokumentation (\emph{docs}), die vom Programm erzeugten Ausgaben (\emph{output}), sowie für die vorgesehenen UnitTests (\emph{tests}) zur Verfügung.
+
+\definecolor{mygray}{rgb}{0.9,0.9,0.9}
+\lstset{backgroundcolor=\color{mygray},
+	captionpos=b,  % sets the caption-position to bottom
+	emph={functionfinder, ffrunner}, 
+	emphstyle=\color{red},
+	basicstyle=\small,
+	frame=single,
+	framextopmargin=6pt,
+	framexbottommargin=6pt,
+	morecomment=[l][\color{red}]{/},}
+
+\begin{figure}[h]
+\caption{Struktur des Ordneraufbaus}
+\begin{tabular}{c}  % the tabular makes the listing as small as possible and centers it
+\lstinputlisting[label=folder]{tree.txt}
+\end{tabular}\\
+\centering
+Quelle: Eigene Darstellung.
+\label{tab:structure}
+\end{figure}
+
+%möglicherweise Grafik hinzufügen
+%Der logische Programmablauf gliedert sich, wie die angeführte Grafik zeigt, im Wesentlichen in drei Abschnitte, die auch im Hauptteil dieser Arbeit behandelt werden.
+
+
+
+
+\section{Beurteile die Qualität} des zur Verfügung gestellten Datensatzes. Bereite Deine Erkenntnisse so auf und visualisiere sie so, dass Businesspartner in einer klaren und einfachen Weise die wichtigen Zusammenhänge verstehen können.
+
+Stelle ein \section{erstes Basismodell} (ein sogenanntes Baseline-Modell) auf, sowie ein präzises Vorhersagemodell, das den Businessanforderungen genügt, nämlich die Erfolgsrate der Kreditkartenzahlungen zu erhöhen und gleichzeitig die Transaktionskosten gering zu halten.
+
+Damit die Businesspartner Vertrauen in Dein neues \section{Modell} entwickeln, solltest du die Wichtigkeit der einzelnen erklärenden \subsection{Variablen} diskutieren und die \subsection{Modellresultate} so interpretierbar wie möglich gestalten. Außerdem ist eine detaillierte \subsection{Fehleranalyse} sehr wichtig, damit die Businesspartner auch die Schwachstellen Deiner Herangehensweise verstehen.
+
+Im letzten Schritt des Projekts soll ein \section{Vorschlag} unterbreitet werden, wie Dein Modell in die tägliche Arbeit des Fachbereichs eingebunden werden kann, beispielsweise wie eine graphische Benutzeroberfläche (GUI) aussehen könnte. 
+

@@ -1,0 +1,219 @@
+\chapter{Projektplan}
+
+Wie bereits im Konzeptionsteil dieser Arbeit beschrieben wurde, lehnt sich die Planung dieses Projektes an das Softwareprozess-Rahmenmodell V-Modell XT an \citep{angermeier_v-modell-xt_2024}. Die untere Grafik zeigt daher die Entscheidungspunkte des Projektes in einer Projektdurchführungsstrategie, die ebenso für die Definition der Meilensteine herangezogen wird. Die abgebildeten Zahlen nummerieren diese und werden in dieser Arbeit gleichzeitig als Referenz auf den jeweiligen Meilenstein weitergeführt. Mit Hilfe der nachfolgenden Zeitplanung werden die Entwicklungsschritte zeitlich hinterlegt und ermöglichen so, möglicherweise noch weitere Optimierungen hinsichtlich Ablauf und Teamkonfiguration.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{pics/projektdurchfuehrungsstrategie.png}
+\caption{Projektdurchführungsstrategie} 
+\label{fig:strategy}
+\end{figure}
+
+\FloatBarrier
+
+\section{Zeitplanung}
+
+\subsection{Definition von Meilensteinen}
+
+Wie bereits angeführt sind die o.a. nummerierten Meilensteine aus der groben Durchführungsstrategie des Projektes abgeleitet. Im Nachfolgenden werden wesentliche Arbeitspakete des Projektstrukturplans, die den jeweiligen Meilensteinen zugeordnet sind, mit Zeitschätzungen hinterlegt. Diese sind nach dem Schema \textit{(Mindestbedarf/Erwartungswert/Maximalbedarf)} in Tagen notiert. Für die Aufgaben der Entwicklungssprints wurden die Arbeitspakte des Punktes Systemerstellung der Konzeptionsphase zusammengefasst. Ein Sprint wird hierbei mit jeweils zehn Arbeitstagen (zwei Wochen) veranschlagt.
+
+\begin{enumerate}
+	\item \textbf{Projekt initialisiert} (6/9/12)
+	\begin{enumerate}
+		\item Projektteam zusammenstellen (2/3/5)
+		\item Zeitplanung erstellen (2/2/4)
+		\item Kostenschätzung erstellen (1/2/2)
+		\item Qualitätshandbuch erstellen (4/7/9)
+		\item Risikoliste erstellen (2/3/4 Tage)
+	\end{enumerate}
+	
+	Insgesamt werden für das Erreichen dieses Meilensteines mindestens elf Personaltage, aber maximal 24 Personaltage veranschlagt. Der erwartete Wert liegt bei 17 Personaltagen. Abgesehen von der Zuarbeit durch Fachbereiche liegen diese Aktivitäten mit Masse im Bereich der Projektleitung. Diese besteht aus zwei Personen und einer administrativen Assistenz. Die Tätigkeiten sollten daher in ca. sechs bis zwölf Tagen zu bewerkstelligen sein. Die erwartete Dauer liegt bei etwa neun Tagen. 	
+	
+	\item \textbf{Anforderungen festgelegt} (18/25/31)
+	\begin{enumerate}
+		\item Workshop \glqq neue Arbeitsprozesse\grqq\ organisieren (3/4/8)
+		\item Workshop \glqq neue Arbeitsprozesse\grqq\ durchführen (2/2/2)
+		\item Requirements Engineering und Backlog erstellen (10/14/16)
+		\item Hardware spezifizieren (3/4/5)
+	\end{enumerate}
+	
+	Die Anforderungen eines Projektes sollen detailliert und ausreichend tief spezifiziert sein. Je genauer hier gearbeitet wird und umso mehr Stakeholder an dieser Stelle mitwirken können, desto zufriedenstellender und zielgerichteter wird das Ergebnis aussehen. An diesem Meilenstein, wird daher das gesamte Projektteam beteiligt sein, und gegebenenfalls auch noch weitere externe Stakeholder hinzuziehen. Eine \glqq Arbeitsteilung\grqq\ scheint hierbei jedoch wenig sinnvoll, weshalb ein Zeitbedarf von 18/24/31 Tagen für diese Aufgaben geschätzt wird. Wie im späteren Auszug aus dem GANTT-Diagramm (siehe Abb.\ref{fig:gantt}) ersichtlich sind mehrere weitere Aufgaben von den Ergebnissen des Requirements Engineering abhängig. Optimalerweise wird dieses bereits während des Workshops mit dem Team der Planungsstelle begonnen, wo die  Anforderungen der zukünftigen Nutzer diskutiert, aufgenommen und dokumentiert werden können. Durch diese Überlappung reduziert sich die erwartete Gesamtdauer bis zur Erreichung dieses Entscheidungspunktes auf 22 Tage.
+	
+	\item \textbf{Scrum Sprint: Data-Management} (1/2/2 Sprints)
+	\begin{enumerate}
+		\item Sprintorganisation (Änderungsanträge, Sprintbacklog, ...) (je Sprint 1/1/1)
+		\item Externe Datenquellen: Recherche und Spezifikation (2/3/5)
+		\item Datenschema \glqq DRK Daten\grqq\ erstellen (1/2/3)
+		\item Datenschema \glqq Wetterdaten\grqq\ erstellen (1/2/3)
+		\item Datenschema \glqq Wochenend- und Feiertagsdaten\grqq\ erstellen (1/2/3)
+		\item Datenschema \glqq besondere Wetterbedingungen\grqq\ erstellen (1/2/3)
+		\item Datenschema \glqq Veranstaltungsdaten\grqq\ erstellen (1/2/3)
+		\item Funktion: Externe Daten abrufen (2/4/5)
+		\item Funktion: Daten vorverarbeiten und speichern (4/6/7)
+		\item Datenbank designen (5/7/10)
+	\end{enumerate}
+	
+	Die Data-Management Sprints bilden in vielerlei Hinsicht die Grundlage für die weitere Entwicklung. Deshalb arbeitet das gesamte Scrum-Team an diesen Aufgaben. Mit drei Personen liegt der Zeitbedarf für diese Aufgaben bei 6/10/14 Tagen, also ein oder zwei Sprints. Ein durchdachtes Datenmanagement ist für die nachfolgenden Schritte förderlich, daher werden zwei Sprints für diese Arbeitspakete als Zeitbedarf angenommen. Wobei sich der erste Sprint vorwiegend mit der Datenbeschaffung und der zweite mit dem Datenbankdesign beschäftigt.
+	
+	\item \textbf{Scrum Sprint: Machine Learning Design} (4/5/6 Sprints)
+	\begin{enumerate}
+		\item Sprintorganisation (Änderungsanträge, Sprintbacklog, ...) (je Sprint 1/1/1)
+		\item Entwicklungsdatensatz \glqq interne Daten\grqq\ generieren (1/1/1)
+		\item Entwicklungsdatensatz \glqq externe Daten\grqq\ generieren (1/1/1)
+		\item Datenexploration, -dokumentation und -aggregation (2/4/5)
+		\item Konzeption verschiedener ML-Ansätze bzw. Algorithmen (5/7/10)
+		\item Evaluierung der ML-Ansätze (5/8/10)
+		\item Modelltrainings (10/12/15)
+		\item Modelltests und -optimierung (5/6/9)
+		\item Modellanwendung (Prediction) parametrisieren (\glqq flexible prediction scope\grqq\ ) (3/4/5)
+	\end{enumerate}
+	
+	Für das Machine Learning Design ist in erster Linie die/der Data Scientist verantwortlich. Hierfür ist eine Person im Scrum-Team vorgesehen. Die ML-Sprints lassen sich daher teilweise parallel zu den nachfolgenden  Development-Sprints umsetzen.  Der summierte Zeitbedarf würde mit 31/43/56 Tagen, also vier bis sechs Sprints geschätzt werden. Einige der Aufgaben habe jedoch Überschneidungspunkte und laufen in ähnlichen Denkprozessen ab, weshalb auch ein/e einzelne/r Data Scientist teilweise Arbeitspakete parallel bearbeiten kann. Modelltrainings, -tests und -optimierungensind ein gutes Beispiel hierfür. Im GANTT-Diagramm (siehe Abb.\ref{fig:gantt}) konnten die Arbeitspakete sinnvoll auf nur drei Sprints aufgeteilt werden, wobei der Fokus des Ersten auf der Konzeptionierung, des Zweiten auf der Evaluierung verschiedener Ansätze und des dritten Sprints auf den Trainings- und Optimierungen des Modells gelegt wird.
+	
+	\item \textbf{Scrum Sprint: Developement} (1/2/3 Sprints)	
+	\begin{enumerate}
+		\item Sprintorganisation (Änderungsanträge, Sprintbacklog, ...) (je Sprint 1/1/1)
+		\item Eingabe-GUI (interne Daten) designen (5/10/12)
+		\item Eingabe-GUI (externe Daten) designen (5/10/12)
+		\item Funktion: Modeltraining starten (1/1/1)
+		\item Funktion: Modelanwendung (Prediction) starten (1/1/1)
+		\item Funktion: Ergebnisse ausgeben (1/1/1)
+		\item Funktion: Ergebnisausgabe mit bestehenden, älteren Vorhersagen vergleichen (1/2/2)
+		\item Funktion: Notification (3/5/6)
+		\item Funktion: Sicherheitschecks für Datenschnittstellen (1/1/1)
+		\item Funktion: Userfeedback aufnehmen (3/5/6)
+	\end{enumerate}
+	
+	Die Arbeitspakete dieses Sprints liegen mit Masse im Aufgabenbereich der Entwickler:innen. Davon wurden in der Teamkonstellation zwei vorgesehen. Der summierte und anschließend halbierte Zeitbedarf beträgt daher 8/18/21 Tage. Das Entspricht ein bis drei Sprints. Nachdem Entwicklung zumeist länger dauert als angenommen, werden hier für die Planung drei Sprints vorgesehen. Jede angeführte, entwickelte Funktion beinhaltet des weiteren die dazugehörigen Unit-Tests, die Eintragungen in die Systemdokumentation und die Bedienungsanleitung, sowie die entsprechenden Log-Ausgaben für ein Systemmonitoring. Die Sprints der Anwendungsentwicklung können bereits parallel zu jenen des Machine-Learning Designs begonnen werden.
+
+	\item \textbf{Hardware beschafft} (47/70/138)
+	\begin{enumerate}
+		\item Angebote einholen (2/5/10)
+		\item Beschaffung einleiten (2/2/2)
+		\item Lieferzeit berücksichtigen (40/60/120)
+		\item Lieferung abnehmen (1/1/1)
+		\item Hardware logistisch erfassen (1/1/2)
+		\item Ersatzteilbewirtschaftung und Hardwareablöse planen (1/1/3)
+	\end{enumerate}
+	
+	Das Beschaffen der Hardware wird der/die Mitarbeiter:in des IT-Betriebes übernehmen. Die zu erwarteten Lieferzeiten sind hierbei ein kritischer und schwer zu kalkulierender Faktor. Deshalb sollte das Einleiten der Beschaffung so bald als möglich stattfinden. Der Zeitbedarf wird an dieser Stelle mit 47/70/138 Tagen geschätzt.
+
+	\item \textbf{TestCases generiert} (5/7/10)
+		\begin{enumerate}
+		\item Testfälle generieren (5/7/10)
+	\end{enumerate}
+	
+Test Cases zur Überprüfung der fertigen Software basieren auf den User Stories, also auf Anwendungsfällen, mit denen die Nutzer konfrontiert sind und die es zu bewerkstelligen gilt. \citep[S.12]{microtool_gmbh_use_2017}. Der diesem Projekt zugrunde liegende Use Case \citep{grunsky_rettungsdienst_2024} ist vergleichsweise mit anderer Software relativ einfach in der Benutzer-System-Interaktion. Dennoch liegt es in der Verantwortung des Productowners (in diesem Fall, der Projektleitung), in der Phase der Anforderungserstellung die User Stories herauszuarbeiten und die entsprechenden Test Cases für die Integration zu generieren. Optimalerweise beginnt dieser Prozess bereits während, oder unmittelbar nach den Workshops mit den Mitarbeitern der Planungsstelle (siehe Meilenstein: \glqq Anforderungen festgelegt\grqq\ ). Für das erstellen von Testfällen wird ein Bedarf von 5/7/10 Tagen angenommen.
+	
+	\item \textbf{In IT-Betrieb implementiert} (7/14/22 einmalig, 3/4/7 iterativ)
+	\begin{enumerate}
+		\item Release roll-out plan erstellen (1/2/3 einmalig)
+		\item Aufbau der Hardware (1/2/4 einmalig)
+		\item Software auf neuer Hardware bereitstellen (2/2/4)
+		\item Monitoring Grundgerüst/Dashboard umsetzen (5/10/15 einmalig)
+		\item Integrationstests durchführen (2/2/3 iterativ)
+		\item Monitoring umsetzen (1/2/4 iterativ)
+	\end{enumerate}
+	
+	Die Aufgaben der Integration übernimmt der IT-Betrieb, der mit einer Person im Projektteam vertreten ist. Die angeführten Arbeitspakete lassen sich in zwei Kategorien unterteilen. Jene, die nur einmalig ausgeführt werden müssen, wie zB der Aufbau der Hardware, und die anderen, die iterativ nach jedem \glqq ausrollbaren\grqq\ Softwarestand zu erledigen wären. Die einmaligen Aufgaben, können teils bereits zu einem frühen Zeitpunkt, unmittelbar nach dem Requirements Engineering begonnen werden (wie zB das Erstellen eines Release Roll-out Plans oder des Monitoring Grundgerüsts), das spart Zeit und schafft Reserven. Andere finden sich nahezu an letzter Position des Zeitplans, wie zB der Aufbau der gelieferten Hardware. Wie im GANTT-Diagramm (siehe Abb.\ref{fig:gantt}) ersichtlich, bestimmen vor allem die Hardwarelieferzeiten die Gesamtdauer  des Projektes. Ein frühzeitiges Release von funktionierenden Teilkomponenten wird daher erwartungsgemäß obsolet, da mit Aufbau der Hardware die Software bereits fertiggestellt sein sollte.  Dennoch finden sich ein Release Roll-out Plan, sowie die iterativen Aufgaben in der Planung wieder, um gegebenenfalls (zB bei erhöhtem Zeitbedarf in der Entwicklung) darauf zurückgreifen zu können. Erwartungsweise wird jedoch nur ein Release mit anschließenden Integrationstests und Implementierung des Monitorings notwendig sein.
+	
+	\item \textbf{Abnahme durchgeführt} (9/12/17)
+	\begin{enumerate}
+		\item Schulungsunterlagen erstellen (3/4/6)
+		\item Benutzerschulung durchführen (2/2/2)
+		\item Projektdokumentation abgeschlossen (4/5/8)
+		\item Abnahmeerklärung gefertigt (1/1/1)
+	\end{enumerate}
+	
+	Sind alle vorangegangenen Aufgaben ordnungsgemäß erledigt worden, werden für die Abnahme nur noch die Projektleitung und die/der Mitarbeitende der Planungsstelle benötigt. Hierbei können die großen Punkte \glqq Schulung\grqq\ und \glqq Dokumentation\grqq\ parallel bearbeitet werden. Der geschätzte Zeitaufwand beträgt daher 5/7/9 Tage.
+	
+\end{enumerate}
+
+
+\subsection{Erstellung eines GANTT-Diagramms}
+
+Das in Abb.\ref{fig:gantt} dargestellte GANTT-Diagramm zeigt die zeitlich hinterlegten Meilensteine und die Arbeitspakete in ihren Abhängigkeiten zueinander, ihrer Bearbeitungsreihenfolge, und den Möglichkeiten der parallelen Bearbeitung. Für den Zeitbedarf der einzelnen Arbeitspakete wurde jeweils der oben beschriebene und begründete Erwartungswert herangezogen. Der so berechnete Gesamtzeitbedarf für dieses Projekt wird mit 23 Wochen angenommen. Im Diagramm begann die Bearbeitung am 03.~Februar~2025 und sollte gemäß Planung bis zum 14.~Juli~2025 abgeschlossen werden können. 
+
+Zur exemplarischen Darstellung der Vorgehensweise wurden in der u.a. Grafik die Meilensteine \glqq Anforderungen festgelegt\grqq\ und \glqq In IT-Betrieb implementiert\grqq\ mitsamt ihren Arbeitspaketen angezeigt. Man erkennt hier gut die Bedeutung des Requirements Engineering aufgrund der nachvollziehbaren Abhängigkeiten weiterer Meilensteine und Arbeitspakete. Ebenso deutlich zu sehen ist die der Grund für den augenscheinlich großen Zeitbedarf der Implementierung in den IT-Betrieb. Schuld daran ist die \glqq Aufspreizung\grqq\ der Arbeitspakete auf nahezu den gesamten Entwicklungsprozess. Zu guter Letzt ist auch die Parallelität der Entwicklungs- und Machine Learning Sprints erkennbar, sowie der Gewinn hinsichtlich des Gesamtzeitbedarfs, der sich daraus ergibt. Das ermöglicht auch, dass in der ersten Planung nur wenig auf die, in der Konzeptionsphase getroffenen,  Priorisierung der Arbeitspakete eingegangen werden muss. Die vorhandene Zeit lässt auch die planmäßige Umsetzung von niedriger priorisierten Funktionen der Software zu.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=17cm]{pics/gantt.png}
+\caption{GANTT-Diagramm} 
+\label{fig:gantt}
+\end{figure}
+
+\FloatBarrier
+Die nachfolgende Grafik zeigt die Anpassung und Erweiterung der Projektdurchführungsstrategie aus Abb.\ref{fig:strategy}. Die hinzugefügten schwarzen Kästen in der rechten unteren Ecke der Entscheidungspunkte zeigen den geschätzten Zeitaufwand (in Wochen) für die Umsetzung dieses Meilensteins. Die kumulierte Dauer der Pfade bis zu Beginn der Tätigkeiten für den Entscheidungspunkt \glqq In IT-Betrieb implementieren\grqq\ wurden farbig herausgehoben. Der rot eingefärbte Kasten und die dazugehörigen Pfeile stellen den kritischen Pfad dar, der - gut erkennbar - maßgeblich von der Beschaffung der Hardware abhängig ist. Der Pfad der Entwicklung folgt dem kritischen Pfad jedoch dicht, mit nur einer Woche Reserve. Eine Verzögerung in diesem Bereich ließe das Projekt daher genauso schnell in der Gesamtdauer anwachsen wie ein Lieferverzug der Hardware.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{pics/projektdurchfuehrungsstrategie_zeitplanung.png}
+\caption{Projektdurchführungsstrategie inkl. Zeitschlätzung} 
+\label{fig:strategyplustime}
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Änderung der Teamkonfiguration}
+\label{teamconfig}
+Durch das Hinzufügen eines/einer weiteren Data Scientist, könnte der Zeitbedarf der Machine-Learning Sprints vermutlich reduziert werden. Das hätte Auswirkungen auf den gesamten Entwicklungsprozess. Hier könnten gem. GANTT-Diagramm etwa zwei Wochen eingespart werden. Das SCRUM-Team wäre dann mit seiner Arbeit fertig und würde nicht mehr gebraucht. Im Gegenzug dazu müsste für 15 Wochen ein/e weitere/r Data Scientist bezahlt werden. Ob durch diese Maßnahme die Projektkosten reduziert werden können bleibt daher noch zu erwägen.
+
+Aufgrund des kritischen Pfades der Hardwarebeschaffung wäre eine Verkürzung des Entwicklungsprozesses und damit auch eine Änderung der Teamkonfiguration aus zeitlichen Gründen nicht zwingend notwendig. 
+
+\section{Definition von \glqq fertig\grqq\ }
+Der Use Case zu diesem Projekt \citep{grunsky_rettungsdienst_2024} definiert die benötigte Kernfunktionalität (und damit auch den ersten  \glqq fertigen\grqq\ Zustand) der Software damit, dass diese bis zum zehnten Tag jedes Monats eine Liste mit der tageweisen Anzahl benötigter Bereitschaftsfahrer:innen für den Folgemonat ausgeben soll. Hierfür ist die Eingabe interner Daten der Bereitschaftsfahrten (als Lernmaterial), das Machine Learning Modell (Berechnung) und die Ausgabe für die Planungsstelle (Ergebnisliste) erforderlich. Vereinfacht ausgedrückt wird dies mit zwei GUIs, einer Datenbank, und einem passenden Zeitreihen-Vorhersagemodell abgedeckt. Die damit verbundenen Funktionen und Arbeitspakete wurden in der Konzeptionsphase als \textit{\colorbox{hellrot}{must}} priorisiert. Die restlichen Aufgaben, sowie die Beschaffung der Hardware bleiben dadurch jedoch unberührt. 
+
+Das Hinzuziehen weiterer externer Daten wie Veranstaltungs-, Temperatur- oder Wetterdaten, sowie die laufende Selbstevaluierung der eigenen Vorhersage, ist für die Grundfunktionalität nicht zwingend erforderlich. Im Falle eines höheren Zeitbedarfs als geplant richtet sich die Priorität der Arbeitspakete nach der Grundfunktionalität, diese ist mit dem ersten Release und bei vorhandener Hardware nach einer Gesamtzeit von etwa 23 Wochen zu erreichen. Zusatzfunktionalitäten können dann bei ausreichend vorhandenem Budget ggf. über einen Release Roll-out Plan nachgezogen werden.
+
+\section{Kostenschätzung}
+
+Die geschätzten Kosten für dieses Projekt setzen sich im Grunde aus drei Bereichen zusammen:
+
+\begin{enumerate}
+	\itemsep-8pt
+	\item Personalkosten für Projektabwicklung und Softwareentwicklung
+  	\item Kosten für die geplante Hardware
+ 	\item Administrative Kosten inkl. Arbeitsmaterial, Telefongebühren, etc. 
+\end{enumerate}
+
+Für den letzten Punkt wurde der Einfachheit halber, bei einem Projektteam von insgesamt neun Teammitgliedern und einer geschätzten Gesamtprojektdauer von etwa einem halben Jahr, ein Betrag von €~10.000,- angenommen.
+
+Die Kosten für die Hardware können im Detail erst nach dem Arbeitspaket \glqq Hardware spezifizieren\grqq\ festgelegt werden. Schätzungsweise wird eine performante aber möglichst einfache Server- und Storagelösung für diesen Use Case bevorzugt. Überschlagsmäßig ist hierfür mit Kosten in der Höhe von etwa €~60.000,- zu rechnen \citep{thomas-krennag_rack-server_2025}.
+
+Für die Schätzung der Personalkosten wurden durchschnittliche Jahresgehälter, sowie Arbeitgebernebenkosten (ca. 29\%) in Deutschland herangezogen und unter der Annahme von 220 Arbeitstagen im Jahr auf einen Tagessatz für die einzelnen Projektteammitarbeiter:innen heruntergebrochen \citep{chatgpt_schatzung_2025}.
+
+Der Zeitbedarf anhand der Zeitplanung sieht vor, dass alle Teammitglieder für 17 Wochen durchgehend an dem Projekt arbeiten werden, der/die Mitarbeiter:in aus dem IT-Betrieb noch eine weitere zusätzliche Woche, sowie die Mitglieder der Projektleitung noch weitere 6 Wochen. Die unten angeführte Tabelle zeigt die angeführten Berechnungen. Eine Woche besteht aus fünf Arbeitstagen. 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{pics/personalkosten.png}
+\caption{Personalkostenschätzung} 
+\label{fig:costs}
+\end{figure}
+
+\FloatBarrier
+
+Die unter Punkt \ref{teamconfig} angedachte Änderung der Teamkonfiguration lässt sich an dieser Stelle kostenmäßig gut vergleichen. Der Zeitbedarf für die Entwicklungsteams und den/die Mitarbeiter:in der Planungsstelle reduziert sich auf 15 Wochen dafür wird für ein/e weitere/r Data Scientist für 15 Wochen hinzugerechnet. 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{pics/personalkosten_add_ds.png}
+\caption{Personalkostenschätzung mit zusätzlicher/m Data Scientist} 
+\label{fig:costs_add_ds}
+\end{figure}
+
+\FloatBarrier
+
+Die Personalkosten steigen in dieser Variante um €~10.000,- und, wie beschrieben, wird auch kein zeitlicher Vorteil durch diese Personalverstärkung erreicht. Die Teamkonfiguration wird demnach wie geplant weitergeführt.
+
+Die Gesamtkosten des Projekts belaufen sich, aufgrund der Schätzungen auf etwa € 380.000,-, wie die u.a. Tabelle zusammenfassend darstellt. Im Pitch~Deck des Use~Cases wurde prognostiziert, dass mit einer Vorhersage des Bereitschaftspersonalbedarfs anhand der Software bis zu €~14.000,- pro Tag eingespart werden können. Mit dieser Prognose würden sich die Projektkosten vmtl. innerhalb von ein bis zwei Monaten amortisieren.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=8cm]{pics/gesamtkosten.png}
+\caption{Gesamtkosten} 
+\label{fig:total_costs}
+\end{figure}
+
+\FloatBarrier

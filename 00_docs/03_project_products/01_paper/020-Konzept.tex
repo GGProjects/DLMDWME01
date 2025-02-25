@@ -1,0 +1,238 @@
+\chapter{Konzeptvorstellung}
+
+Die DRK Rettungsdienst Berlin GmbH ist Teil der Notfallrettung in Berlin und Partner des Landes Berlin. Der Dienst besetzt Rettungs- und Intensivtransportwagen und absolviert jährlich tausende Alarmeinsätze im Berliner Stadtgebiet. Täglich sind hierbei mehrere Einsatzfahrende im Dienst. Akutell werden pro Tag zusätzlich 90 weitere Fahrer:innen in Bereitschaft gehalten, um bedarfsgerecht agieren zu können. Aufgrund einer Annahme der Planungsstelle, dass der Bedarf an Personal in Bereitschaft saisonalen Schwankungen unterliegt und hier Kosten gespart werden könnten, wurde eine Use Case Analyse für den Einsatz eines Machine Learning Ansatzes zur effizienteren Gestaltung des Bereitschaftsdienstplanes erstellt \citep{grunsky_rettungsdienst_2024}. Die Umsetzung des Systems wurde nun vom Präsidium des Landesverbandes Berliner Rotes Kreuz projektiert. Nachdem vor Kurzem, zur Optimierung des Datenmanagements, ein Data Scientist eingestellt wurde, hat das Präsidium die \glqq Make or Buy\grqq\ Entscheidung bereits getroffen und dieses Projekt zur Feuertaufe des Data Scientist erklärt.
+
+Diese Software berechnet bis zum 10. Tag jedes Monats den täglichen Bedarf an Bereitschaftspersonal für den Folgemonat aufgrund von historischen Daten des Rettungsdienstes. Wichtig ist vor allem, dass niemals zu wenig Personal in Bereitschaft gehalten wird, aber trotzdem nur so viel wie notwendig um Kosten zu sparen. Aufgrund der Use Case Analyse soll die projektierte Software zu Beginn des Monats aktualisierte Daten zur Anzahl an Notfällen, eingesetzten Einsatzfahrer:innen, etc. den bestehenden historischen Daten hinzufügen, daraus ein Regressionsmodell lernen, dieses anschließend auf den Folgemonat anwenden und die Anzahl der benötigten Bereitschaftsfahrenden pro Tag der Planungsstelle zur manuellen Weiterbearbeitung bereitstellen. Das Modell soll darüber hinaus möglicherweise noch mit weiteren Features angereichert werden. Zum Beispiel können Tagestemperaturdaten die Saisonalität um eine weitere Dimension ergänzen und gegebenenfalls transparentere Abhängigkeiten aufzeigen. An Wochen- und Feiertagen verhält sich die Bevölkerung anders als an Arbeitstagen. Das gilt es auch in einem Vorhersagemodell zu berücksichtigen. Besondere Wetterbedingungen führen zu einer kurzfristigen Anpassung der Vorhersage und einer Meldung an die Planungsstelle, damit diese rechtzeitig reagieren kann. Und zu guter Letzt erhöhen bevorstehende Veranstaltungen (nach Größe kategorisiert) ebenso den Bedarf an Bereitschaftspersonal und können somit zusätzliche Merkmale für die Vorhersage liefern.
+Eine laufende Selbstevaluierung der getätigten Vorhersagen des Modells unter Einbeziehung aktueller Wetterprognosen und geplanter Veranstaltungen für das aktuelle Monat korrigiert gegebenenfalls die vorab getroffene Vorhersage und das Planungspersonal wird mit einer Notification hingewiesen, den Bereitschaftsdienstplan kurzfristig anzupassen.
+
+Alles in allem hilft das Machine Learning System dem Rettungsdienst mit einer möglichst akkuraten Vorhersage, unnötige StandBy-Kosten zu reduzieren und dem Anspruch der Wirtschaftlichkeit gerecht zu werden. Diese ist ein essentieller Faktor, um den Rettungsdienst zu erhalten, und somit sicherzustellen, dass auch in Zukunft Menschen in Not geholfen wird.
+
+
+\chapter{Projektstrukturplan und Projektteam}
+
+Im folgenden Abschnitt werden die Teilaufgaben und Arbeitspakete des Projektstrukturplans \citep{wikipedia_projektstrukturplan_2022} aufgelistet. In Klammern neben der Aufgabe ist eine Zuordnung derselben zu einer betrieblichen Organisationseinheit angeführt. Daraus lässt sich in weiterer Folge die notwendige Zusammenstellung eines Teams ableiten.  
+
+Neben den grundlegenden und, gemäß Aufgabenstellung, vorgegebenen Projektplanungswerkzeugen orientiert sich die Projektplanung an einer vereinfachten Variante des Softwareprozessmodell-Rahmenwerks V-Modell XT und verbindet dieses mit Scrum-Elementen. Das Rahmenwerk bietet gut dokumentierte und nachvollziehbare Projektabwicklungsprozesse während ein agile Entwicklung rasche, ergebnisgetriebene Projektprodukte ermöglicht. Aufgrund der relativ kleinen Projektgröße wird der Projektleitung gleichzeitig die Aufgabe des Productowners zugewiesen. 
+
+Aus Sicht des Rahmenwerkes handelt es sich beim gegenständlichen Projekttyp um ein Systementwicklungsprojekt (AG/AN), in der Variante \glqq AG-AN-Projekt mit Entwicklung, Weiterentwicklung oder Migration\grqq\ , das keine Trennung zwischen der Auftraggeber- und Auftragnehmerseite vorsieht. Die durch das Rahmenwerk vorgegebenen Vorgehensbausteine für diese Projekttypvariante und weitere anzuwendende Projektmerkmale sind:
+
+\begin{itemize}
+	 \itemsep-8pt
+	 \item Projektmanagement
+	 \item Qualitätssicherung
+	 \item Konfigurationsmanagement
+	 \item Problem- und Änderungsmanagement
+	 \item Anforderungsfestlegung
+	 \item Systemerstellung
+	 \item Lieferung und Abnahme
+	 \item Kaufmännisches Projektmanagement
+	 \item Projektgegenstand: Softwareentwicklung
+	 \item Betriebsübergabe
+\end{itemize} 
+
+Die Grundidee dieser Projekttypvariante ist, dass Anwenderanforderungen bereits zu Beginn des Projekts relativ umfassend abgesteckt werden und Änderungen über das Änderungsmanagement bzw. über die Iterationen der Systemerstellung geplant werden. Damit wird das System in einzelnen Inkrementen entworfen, realisiert und ausgeliefert. Das hat den Vorteil, dass der Anwender frühzeitig in den Besitz einer Vorstufe des Systems gelangt und sich damit die Prinzipien einer agilen Entwicklung anwenden lassen \citep[S.280]{angermeier_v-modell-xt_2024}.
+
+Da eine vollumfängliche Anwendung der oben genannten Vorgehensbaustände vermutlich den Rahmen des Projektes übersteigen würde, lehnt sich der nachfolgende Projektstrukturplan lediglich an diese an und versucht gleichzeitig den Projektoverhead auf ein Minimum zu beschränken.
+
+Die Arbeitspakete für die Entwicklungssprints werden auf Basis der vorausgegangenen Use Case Analyse abgeleitet und implizieren jeweils auch die dazugehörigen Unit-Tests. Erweitert werden diese Arbeitspakete um Entwicklungsbesonderheiten aus den Machine-Learning Operations, wie die u.a. Abbildung \ref{fig:mission} zeigt \citep[S.3]{tamburri_sustainable_2020}. Zur Priorisierung sind die Arbeitspakete der Entwicklung im Projektstrukturplan bereits nach der MoSCoW-Methode bewertet und farbkodiert hervorgehoben \textit{(\colorbox{hellrot}{must})}, \textit{(\colorbox{hellgelb}{should})}, \textit{(\colorbox{hellgreen}{could})}, \textit{(\colorbox{hellgrau}{won't})}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=12cm]{pics/mlops.png}
+\caption{ML-Ops Workflow} \citep[S.3]{tamburri_sustainable_2020}
+\label{fig:mission}
+\end{figure}
+
+\FloatBarrier
+
+
+	
+\section{Projektstrukturplan}
+
+\begin{enumerate}
+
+	\item Projektmanagement
+		\begin{enumerate}
+			\item Planung und Steuerung
+			\begin{enumerate}
+				\item Stakeholder-Analyse erstellen \textit{(Projektleitung)}				
+				\item Anforderungen festlegen \textit{(Projektleitung, Stakeholder)}
+				\item Review der Anforderungen organisieren (Anforderungsbewertung) \textit{(Projektleitung)}
+				\item Liste der Arbeitspakete erstellen \textit{(Projektleitung)}
+				\item Arbeitspakete priorisieren \textit{(Projektleitung)}
+				\item Entscheidungspunkte / Projektphasenübergänge definieren \textit{(Projektleitung)}
+				\item Projektdurchführungsstrategie definieren \textit{(Projektleitung)}
+				\item Projektteam zusammenstellen \textit{(Projektleitung)}				
+				\item Zeitplanung erstellen \textit{(Projektleitung, beteiligte Fachbereiche)}	
+				\item Kaufmännisches Projektmanagement
+				\begin{enumerate}
+					\item Kostenschätzung erstellen \textit{(Projektleitung, beteiligte Fachbereiche, Controlling)}					
+					\item Projektkostenkontrolle organisieren \textit{(Projektleitung, Controlling)}
+				\end{enumerate}
+			\end{enumerate}
+			\item Berichtswesen
+			\begin{enumerate}
+				\item Projektfortschrittsmeetings planen \textit{(Projektleitung)}
+				\item Konfigurationsmanagement
+				\begin{enumerate}
+					\item Projektdokumentation organisieren \textit{(Projektleitung)}
+					\item Produktbibliothek verwalten \textit{(Projektleitung)}
+				\end{enumerate}
+				\item Projektstatusbericht erstellen \textit{(Projektleitung)}
+				\item Projekttagebuch bzw. -protokolle führen \textit{(Projektleitung)}
+				\item Projektabschlussbericht erstellen \textit{(Projektleitung)}
+				\item Projekthandbuch / Qualitätssicherungshandbuch erstellen \textit{(Projektleitung)}
+				\item Qualitätssicherungsbericht erstellen \textit{(Projektleitung)}
+				\item Änderungsanträge erfassen \textit{(Projektleitung)}
+				\item Prüfberichte erstellen \textit{(Projektleitung)}
+			\end{enumerate}
+			\item Risikomanagement
+			\begin{enumerate}
+				\item Risikoliste erstellen \textit{(Projektleitung)}
+			\end{enumerate}
+		\end{enumerate}
+	\item Systemerstellung	
+		\begin{enumerate}
+			\item Entwicklungsplanung
+				\begin{enumerate}
+					\item Detailliertes Requirements Engineering \textit{(Entwicklung)}
+					\item Backlog erstellen \textit{(Productowner/Projektleitung)}
+					\item Allgemeine Sprintplanung vorbereiten \textit{(Entwicklung)}
+					\item Softwaredokumentation organisieren \textit{(Entwicklung)}
+					\item Code-Review-Prozesse implementieren \textit{(Entwicklung)}
+					\item SCRUM-Organisation
+					\begin{enumerate}
+						\item Änderungen aus Änderungsanträgen beschließen \textit{(Entwicklungstteam)}
+						\item Sprint-Backlog erstellen \textit{(Entwicklungsteam)}	
+					\end{enumerate}		
+				\end{enumerate}				
+			\item Datenmanagement
+				\begin{enumerate}
+					\item Externe (betriebsfremde) Datenquellen spezifizieren und dokumentieren \colorbox{hellgreen}{\textit{(Data Scientist)}} 
+					\item Datenschema für DRK Daten erstellen \colorbox{hellrot}{\textit{(Planungssttelle)}} 
+					\item Datenschema (extern) für Tagestemperaturdaten erstellen \colorbox{hellgreen}{\textit{(Data Scientist)}}
+					\item Datenschema (extern) für Wetterdaten erstellen\colorbox{hellgreen}{ \textit{(Data Scientist)}} 
+					\item Datenschema (extern) für Wochenend- und Feiertagsdaten erstellen \colorbox{hellgreen}{\textit{(Data Scientist)}} 
+					\item Datenschema (extern) für besondere Wetterbedingungen erstellen \colorbox{hellgreen}{\textit{(Data Scientist)}} 
+					\item Datenschema (extern) für Veranstaltungsdaten\colorbox{hellgreen}{ \textit{(Data Scientist)}} 
+					\item Daten gem. Datenschema automatisch abrufen/erfassen \colorbox{hellgreen}{\textit{(Entwicklung)}} 
+					\item Daten gem. Datenschema vorverarbeiten\colorbox{hellrot}{ \textit{(Data Scientist)}} 
+					\item Vorverarbeitete Daten speichern \colorbox{hellrot}{\textit{(Entwicklung)}} 
+					\item Datenbankdesign \colorbox{hellrot}{\textit{(Entwicklung)}} 
+				\end{enumerate}			
+			\item Machine-Learning (ML) System entwickeln
+				\begin{enumerate}
+					\item Beschaffung von Testdaten aus externen Quellen \colorbox{hellgelb}{\textit{(Data Scientist)}} 
+					\item Beschaffung von Testdaten aus internen Quellen \colorbox{hellrot}{\textit{(Data Scientist, Entwicklung)}} 
+					\item Datenexploration \colorbox{hellrot}{\textit{(Data Scientist)}} 
+					\item Verknüpfung externer und interner Daten \colorbox{hellgelb}{\textit{(Data Scientist}} 
+					\item Konzeption des ML-Ansatzes \colorbox{hellrot}{\textit{(Data Scientist)}} 
+					\item Evaluierung verschiedener ML-Algorithmen \colorbox{hellrot}{\textit{(Data Scientist)}} 
+					\item Modelltraining \colorbox{hellrot}{\textit{(Data Scientist, Entwicklung)}} 
+					\item Modelltests und -optimierung \colorbox{hellrot}{\textit{(Data Scientist)}} 
+ 				\item Modellanwendung \colorbox{hellrot}{\textit{(Entwicklung)}} 
+					\item Ergebnisausgabe \colorbox{hellrot}{\textit{(Entwicklung)}} 
+					\item Selbstevaluierung
+					\begin{enumerate}
+						\item temporäres hinzufügen von Prognosedaten Wetter \colorbox{hellgreen}{\textit{(Entwicklung)}}
+						\item temporäres hinzufügen von Prognosedaten Veranstaltungen \colorbox{hellgreen}{\textit{(Entwicklung)}}
+						\item Starten des Vorhersagemodells für den aktuellen Monat \colorbox{hellgreen}{\textit{(Entwicklung)}} 
+						\item Vergleich der Ausgabedaten mit aktueller Vorhersage \colorbox{hellgreen}{\textit{(Entwicklung)}} 
+						\item Notifikation bei wesentlichen Vorhersageänderungen an Planungsstelle  \colorbox{hellgreen}{\textit{(Entwicklung)}}
+					\end{enumerate}
+				\end{enumerate} 
+			\item Anwendungsentwicklung
+				\begin{enumerate}
+					\item Mockups bzw. Prototypen designen
+						\begin{enumerate}
+							\item manuelle Dateneingabe interner Daten (GUI) \colorbox{hellrot}{\textit{(Entwicklung)}} 
+							\item manuelle Dateneingabe Veranstaltungsdaten (GUI) \colorbox{hellgreen}{\textit{(Entwicklung)}} 
+						\end{enumerate}
+					\item Systemelemente erstellen
+						\begin{enumerate}
+							\item Start eines Modelltrainings \colorbox{hellrot}{\textit{(Entwicklung)}} 
+							\item Start einer Vorhersage durch das Modell \colorbox{hellrot}{\textit{(Entwicklung)}} 
+							\item täglicher Start des Selbstevaluierungsalgorithmus \colorbox{hellgreen}{\textit{(Entwicklung)}} 
+							\item Ergebnisausgabe \colorbox{hellrot}{\textit{(Entwicklung)}}
+						\end{enumerate}
+					\item Genehmigte Prototypen umsetzen und entwickeln \colorbox{hellrot}{\textit{(Entwicklung)}}
+					\item Schnittstelle für Dateneingaben über GUI entwickeln \colorbox{hellrot}{\textit{(Entwicklung)}}
+					\item Schnittstelle für Format der Datenausgabe entwickeln \colorbox{hellrot}{\textit{(Entwicklung)}}
+					\item Sicherheitstest für Datenschnittstellen entwickeln \colorbox{hellrot}{\textit{(Entwicklung)}}
+					\item Qualitätssicherung 
+						\begin{enumerate}
+							\item Testfälle generieren \colorbox{hellrot}{\textit{(Productowner)}}
+							\item Integrationstests durchführen \textit{(Entwicklung/Tester:in)}
+							\item Regressiontests nach Sprints durchführen \textit{(Entwicklung/Tester:in)}
+							\item Testreports dokumentieren \textit{(Entwicklung/Tester:in)}
+							\item Bug-Issues erstellen \textit{(Entwicklung/Tester:in)}
+						\end{enumerate}
+					\item Manual/Nutzungsdokumentation erstellen
+					\item Ausbildungsunterlagen erstellen
+				\end{enumerate}
+		\end{enumerate}
+	\item Logistik
+		\begin{enumerate}
+			\item Hardware Anforderungen spezifizieren \textit{(Entwicklung, IT-Betrieb, Productowner, Data Scientist)}
+			\item Beschaffung der Hardwarekomponenten \textit{(IT-Betrieb, Einkauf)}
+			\item Ersatzteilbewirtschaftung (Lagerung, Nachbestellung, ...) \textit{(IT-Betrieb)}
+			\item Hardwareablöse planen \textit{(IT-Betrieb)}
+		\end{enumerate}	
+	\item Betrieb 
+		\begin{enumerate}
+			\item Aufbau der Hardware \textit{(IT-Betrieb)}
+			\item Integration der Hardware (IP-Adressen, Anschlüsse, Stromversorgung, Kühlung, ...) \textit{(IT-Betrieb)}
+			\item Release roll-outs planen und durchführen \textit{(IT-Betrieb, Entwicklung)}
+			\item Monitoring umsetzen \textit{(IT-Betrieb, Entwicklung)}
+			\item Benutzerschulung organisieren \textit{(Planungsstelle)}
+			\item Vorgaben zum IT-Betrieb festlegen und dokumentieren \textit{(IT-Betrieb)}
+			\item Wartung organisieren \textit{(IT-Betrieb)}
+		\end{enumerate}
+	\item Lieferung und Abnahme
+		\begin{enumerate}
+			\item Abnahmeerklärung vorbereiten \textit{(Projektleitung)}
+			\item Lieferumfang prüfen \textit{(Projektleitung)}
+		\end{enumerate}			
+	\item Adaptierung von Arbeitsprozessen
+		\begin{enumerate}
+			\item Workshops organisieren \textit{(Planungstelle)}
+			\item Workshops durchführen \textit{(Planungsstelle, Leiter Bereitschaft, IT-Betrieb) }
+			\item Prozesshandbuch erstellen \textit{(Planungstelle)}
+		\end{enumerate}
+	\item Kommunikation
+		\begin{enumerate}
+			\item Kommunikationsplan erstellen \textit{(Projektleitung, PR-Abteilung)}
+			\item externe Kommunikation durchführen (Pressemitteilung über Erstellung und Erfolg) \textit{(PR-Abteilung)}
+			\item interne Kommunikation durchführen (Ankündigung, Fortschrittsinformationen, Schulungspläne, ...) \textit{(Projektleitung, PR-Abteilung, Planungsstelle)}
+			\item Feedback-System entwickeln \textit{(Entwicklung)}
+		\end{enumerate}
+\end{enumerate}
+
+
+\section{Team}
+
+Wie sich anhand der Aufgabenliste gezeigt hat sollte das Projektteam, neben der Projektleitung, aus Mitarbeitenden der Bereiche
+\begin{itemize}
+	\itemsep-8pt
+	\item PR
+	\item IT-Betrieb
+	\item Entwicklung
+	\item Bereitschaftsplanung (Nutzer)
+	\item Data Science (sofern diese nicht Teil der Entwicklung sind)
+\end{itemize}	
+bestehen.
+
+Aufgrund der geringen Größe des Projektes sind manche eigenständigen Aufgaben, wie zB das Änderungsmanagement, zu Teilaufgaben des Projektmanagements geworden. Die Projektleitung hat neben diesen gebündelten administrativen Aufgaben jedoch auch die Funktion des Productowners zu erfüllen und die Kommunikation zu internen und externen Stakeholdern zu führen. In Summe ergibt sich dadurch eine sehr hohe Arbeitslast, weshalb die Projektleitung mit drei Personen abgebildet wird, nämlich dem Projektleiter, der administrativen Assistenz der Projektleitung sowie einer stellvertretenden Projektleitung mit QS-Verantwortung.
+Das Entwicklungsteam ist ein Subelement des Projektteams und setzt sich zusammen aus einem/r SCRUM-Master, zwei Entwickler:innen und einem/r Data Scientist mit Entwicklungskenntnissen.
+Für manche Aufgaben besteht zusätzlicher Informationsbedarf aus zB dem Einkauf oder der Personalabteilung, Dieser erfordert allerdings nicht eine Beteiligung der jeweiligen Abteilung am Projektteam. 
+
+Geplant ist demnach ein Projektteam, bestehend aus neun Personen, das sich wie angeführt zusammensetzt: 
+\begin{itemize}
+	\itemsep-8pt
+	\item Projektleitung
+	\item stellvertretende Projektleitung (aus PR-Abteilung, übernimmt QS-Verantwortung)
+	\item administrative Assistenz der Projektleitung
+	\item Entwicklungsteam (vier Personen, wie oben beschrieben)
+	\item Requirements + QS Mitarbeit (Schnittstelle Nutzer; aus Abteilung Planungsstelle)
+	\item Requirements + QS Mitarbeit (Schnittstelle IT-Betrieb, aus Abteilung IT-Betrieb)
+\end{itemize}

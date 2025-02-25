@@ -1,0 +1,183 @@
+\chapter{Stakeholder Analyse}
+
+In der vorausgehenden Use Case Analyse \citep{grunsky_rettungsdienst_2024} wurden drei unmittelbare Stakeholder des Machine Learning Projektes angeführt.
+
+\begin{enumerate}
+	\item \textbf{Die Bereitschaftsfahrenden}: Es ist davon auszugehen, dass das neue, bedarfszentrierte System üblicherweise weniger Personal in StandBy bereithalten wird, als das vorherige, welches fix 90 Bereitschaftsfahrende pro Tag vorsah. Demnach wird das Bereitschaftspersonal über einen längeren Zeitraum deutlich weniger Bereitschaften zu besetzen haben. Dafür können, diese erst Mitte des Vormonats, also vermutlich deutlich kurzfristiger, bekannt gegeben werden. Grundsätzlich scheint ein erfolgreich arbeitendes Vorhersagesystem den Arbeitsbedingungen der Bereitschaftsfahrer:innen zugute zu kommen. Zumindest in zeitlichem Aspekt. Finanziell wird das Bereitschaftspersonal vermutliche mit Einbußen rechnen müssen. Die Haltung dieser Stakeholder gegenüber dem neuen System ist daher schwer einzuschätzen. Langfristig werden sie allerdings damit leben müssen und haben keinen direkten Einfluss auf den Erfolg des Projektes.
+	\item \textbf{Der Rettungsdienst} (Vertreten durch das Präsidium): Die Leitung des Rettungsdienstes ist daran interessiert, die Leistung des Dienstes auf einem hohen Niveu zu halten und als zuverlässiger Partner für die Stadt und das Land zu gelten. Gleichzeitig ist es unerlässlich wirtschaftlich zu arbeiten und unnötige Kosten zu vermeiden. Gerade im Bereitschaftsdienst ist das eine Gratwanderung. Eine zwölfstündige Bereitschaft kostet den Rettungsdienst, gem. DRK-Reformtarifvertrag etwa  €~165,- \citep{deutsches_rotes_kreuz_drk-reformtarifvertrag_2023}. Bei 90 eingeteilten Bereitschaften sind das €~14.850,- pro Tag Sind die ersten Ansätze vielversprechend, ist davon auszugehen, dass das Präsidium der Umsetzung dieses Projektes positiv und geduldig gegenübersteht, weil langfristig hohe Kosteneinsparungen erzielt werden können. Zeigen die Prototypen des Modells allerdings Schwächen bzw. eine zu hohe Chance zu wenig Bereitschaftsfahrende für einen Tag vorherzusagen, könnte das Projekt vermutlich bereits zu einem frühen Zeitpunkt gestoppt werden um das Budget nicht zu belasten. Wahrscheinlich fordert das Präsidium daher frühzeitig erfolgversprechende Ergebnisse eines prototypischen Vorhersagemodells.
+	\item \textbf{Die Planungsstelle}: Die Mitarbeitenden der Planungsstelle sind die Nutzer des Systems und haben hierdurch am meisten zu verlieren. Derzeit werden, per Anordnung, 90 Bereitschaftsfahrende pro Tag fix vorgesehen. Ein/e Mitarbeiter:in der Planungsstelle ist nicht verantwortlich dafür, ob diese Anzahl ausreicht oder nicht. Es wurde so angeordnet. Mit dem neuen System ist das anders. Ein Vorhersagemodell ermittelt den wahrscheinlichen Bedarf an Bereitschaftspersonal pro Tag und die Mitarbeiter:innen der Planungsstelle übernehmen diesen Wert ihre Planung. Sie sind jedoch auch befugt diesen (protokolliert) zu verändern, wenn sie der Meinung sind, das mehr oder weniger Bereitschaftsfahrende notwendig sind. Mit der Übernahme bestätigen sie, Kraft ihrer Erfahrung, somit auch die Plausibilität der Vorhersage und übernehmen die Verantwortung. Nachdem eine zu geringe Planung, gemäß Vorgabe, in jedem Fall verhindert werden muss, wird das Präsidium selbst mit größtem Interesse auf solche \glqq Fehler\grqq\ achten. Es ist ratsam, die Verantwortlichkeit in diesen Fällen genau und klar zu regeln um den Mitarbeitenden der Planungsstelle Sicherheit zu geben. Außerdem ist die Einbeziehung dieser Stakeholder bereits zu Beginn des Projektes in Form eines Workshops, sowie mit der Bestellung eines Projektteammitglieds zur Mitarbeit an der Qualitätssicherung im Projektplan vorgesehen. Es ist wichtig dieses Personal mit an Bord zu holen um das Projekt nicht Aufgrund einer Ablehnung durch die Nutzer zum Scheitern zu bringen. Innovation und die Möglichkeit der gemeinsamen Gestaltung sollen der Motor zu Akzeptanz und gewollter Verantwortungsübernahme sein.
+\end{enumerate}
+
+\cite{microtool_gmbh_stakeholder_2017} führt, neben Nutzern, Besitzern, und abhängigen Unternehmen, in einem Leitfaden noch die \textbf{Kunden} einer Organisation als Stakeholder an. Im Fall des Roten Kreuzes sind dies die Betroffenen der gemeldeten Notfälle, die in einer solchen Situation ausschließlich an schneller Hilfe interessiert sind. Ob ein Bereitschaftsfahrender von einem Machine Learning System auf StandBy gesetzt wurde oder nicht, ist hier vollkommen egal. Hauptsache es ist jemand verfügbar. Unzufriedene \glqq Kunden\grqq\ sind der entscheidende Faktor, wenn es um das erste, unten angeführte, Risiko geht, den Reputationsschaden. Dieser soll auf jeden Fall vermieden werden.
+
+\chapter{Risikomanagement}
+
+\section{Risikoidentifikation}
+
+Die unten angeführte Liste von zehn identifizierten Risiken des Projektes erhebt bei weitem keinen Anspruch auf Vollständigkeit, sondern dient der exemplarischen Darstellung. 
+
+\begin{enumerate}
+	\itemsep-8pt
+	\item Reputationsschaden, wenn zu wenige Bereitschaftsfahrende eingeteilt werden
+  	\item Ablehnung des Projektes bei den Nutzern (Planungsstelle)
+ 	\item Überschreitung des Projektbudgets
+ 	\item Projektstopp durch das Präsidium (zu geringe Erfolgsaussichten)
+ 	\item Lieferverzug im Bereich der Hardware (externe Faktoren)
+ 	\item Ungenügend bzw. mangelnde historische Testdaten zur Entwicklung des Prototyps
+ 	\item Unmut des Bereitschaftspersonals aufgrund Verdienstentgangs
+ 	\item Ausfall/Abgang von Projektteammitgliedern während des Projektes
+ 	\item Abgang von Personal das für die Wartung/Anpassung des Systems benötigt wird
+ 	\item Fehlende Vorhersage aufgrund Systemausfällen
+\end{enumerate}
+
+Für eine nähere Betrachtung in den nachfolgenden Unterabschnitten, angelehnt an die Norm ISO 31000 \citep{wikipedia_iso_2024},  werden die Risiken Nummer 1, 2 und 5 ausgewählt und einer Risikoanalyse und -bewertung aufgrund einer zuvor definierten Risikomatrix zugeführt.
+
+\section{Risikomatrix}
+
+Anhand einer Risikomatrix kann das Risikoniveau eines identifizierten Risikos eingeordnet werden. Die Bewertung erfolgt nach dem Schema: 
+
+\begin{center}
+\textbf{\textit{\textbf{Eintrittswahrscheinlichkeit des Risikos} x \textbf{Auswirkung des Schadens}} }
+\end{center}
+
+Vor allem bei qualitativen Risikoabstufungen unterstützt die, vorab für ein Projekt definierte, Risikomatrix bei einer nachvollziehbaren und einheitlichen Risikobeurteilung. Welche Risikoniveaus toleriert werden können, Maßnahmen erfordern oder als inakzeptabel eingestuft werden ist üblicherweise in einem Risikohandbuch deklariert. Für die Bewertung der unten angeführten Risikobeispiele gilt:
+
+\begin{itemize}
+	\item \textbf{\colorbox{low}{Risikoniveau Niedrig:}} Das Risiko wird in Kauf genommen 
+	\item \textbf{\colorbox{medium}{Risikoniveau Mittel:}} Sowohl eine Risikoverminderung als auch ein Risikotransfer sind zulässige Maßnahmen. Der kalkulierbare Risikotransfer ist allerdings vorzuziehen.
+	\item \textbf{\colorbox{high}{Risikoniveau Hoch:}} Im besten Fall wirkt eine Kombination von Risikoverminderung oder -vermeidung und Risikotransfer den Risikofaktoren entgegen. In jedem Fall ist ein dokumentiertes Monitoring für dieses Risikoniveau vorgeschrieben.
+	\item \textbf{\colorbox{critical}{Risikoniveau Kritisch:}} Das Risiko ist für das Projekt ein \glqq Show Stopper\grqq\ . Risikovermeidung und ein dichtes Monitoring des Risikos sind die einzig zulässige Strategie
+\end{itemize}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \rowcolor{gray!30} 
+        \textbf{Auswirkung / Wahrscheinlichkeit} &  \textbf{Unwahrscheinlich} & \textbf{Mittel} & \textbf{Hoch} & \textbf{Sehr wahrscheinlich} \\ \hline
+        \cellcolor{gray!30}  \textbf{Kritisch} & \cellcolor{high} Hoch  & \cellcolor{critical} Kritisch & \cellcolor{critical} Kritisch  & \cellcolor{critical} Kritisch \\ \hline
+        \cellcolor{gray!30}  \textbf{Hoch}   & \cellcolor{medium} Mittel & \cellcolor{high} Hoch   & \cellcolor{critical} Kritisch  & \cellcolor{critical} Kritisch \\ \hline
+       \cellcolor{gray!30}  \textbf{Mittel}   & \cellcolor{low} Niedrig       & \cellcolor{medium} Mittel & \cellcolor{high} Hoch &  \cellcolor{high} Hoch \\ \hline
+       \cellcolor{gray!30}  \textbf{Gering} & \cellcolor{low} Niedrig     & \cellcolor{low} Niedrig       & \cellcolor{medium} Mittel   &  \cellcolor{medium} Mittel \\ \hline
+    \end{tabular}
+    \caption{Risikomatrix}
+    \label{tab:risikomatrix}
+\end{table}
+
+\newpage
+
+\section{Risikoanalyse und -bewertung}
+
+\subsection{Risiko 1: Reputationsschaden }
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \rowcolor{gray!30} \textbf{Risikofaktor} & \textbf{Beschreibung} \\
+        \hline
+        Risikonummer & 1 \\
+        \hline
+        Risikobeschreibung & Reputationsschaden, wegen zu wenigen Bereitschaftsfahrenden \\
+        \hline
+        Risikoanalyse & Ein Notruf kann nicht, oder nur verspätet, bearbeitet werden, weil eine ungenügende Anzahl an Bereitschaftsfahrer:innen für diesen Tag vorgesehen wurden. Das ML-Modell hat für diesen Tag eine zu niedrigen Bedarf vorhergesagt.\\
+        \hline
+ 		 Eintrittswahrscheinlichkeit & Mittel; Je mehr Daten vorliegen und mit laufender Modelloptimierung wird die Eintrittswahrscheinlichkeit sinken \\        
+        \hline
+        Auswirkung & Kritisch; Vor allem in der Anfangsphase des Projektes, können Schwächen in diesem Bereich zu einem Projektstopp durch das Präsidium führen \\
+        \hline
+        Risikoniveau & \cellcolor{critical} Kritisch \\
+        \hline
+        Risikosteuerung & Risikovermeidung \\
+        \hline
+        Steuerungsmaßnahmen & Vorhersagemodelle zu Beginn deutlich \glqq überschießen\grqq\ lassen; Anfangstestdatensatz modifizieren, um mit höherem Tagesbedarf zu trainieren \\
+        \hline
+        Steuerungsverantwortung & Data Scientist \\
+        \hline
+        Risikoüberwachung & Ausführliche, dokumentierte und mit Projektleitung besprochene Modelltests in der Entwicklungsphase, periodische Modelltests und -optimierungen in ersten beiden Jahren der Betriebsphase mit historischen Daten (dokumentiert) \\
+        \hline
+        Überwachungsverantwortung & Data Scientist \\
+        \hline
+    \end{tabular}
+    \caption{Bewertung von Risiko 1}
+    \label{tab:risikobewertung1}
+\end{table}
+
+\FloatBarrier
+\newpage
+
+\subsection{Risiko 2: Mangelnde Akzeptanz bei Nutzern}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \rowcolor{gray!30} \textbf{Risikofaktor} & \textbf{Beschreibung} \\
+        \hline
+        Risikonummer & 2 \\
+        \hline
+        Risikobeschreibung & Ablehnung des Systems durch die Nutzer \\
+        \hline
+        Risikoanalyse & Höhere Verantwortung für Ergebnisse eines \glqq Black-Box-Systems\grqq\ \\
+        \hline
+ 		 Eintrittswahrscheinlichkeit & Hoch \\        
+        \hline
+        Auswirkung & Kritisch; Das System wird nicht verwendet und es werden weiterhin weit überschießende Fixwerte eingetragen; Die Mitarbeiter:innen der Planungsstelle verändern sich oder machen schlechte Stimmung \\
+        \hline
+        Risikoniveau & \cellcolor{critical} Kritisch \\
+        \hline
+        Risikosteuerung & Verminderung \\
+        \hline
+        Steuerungsmaßnahmen & Erhöhung der Identifikation mit dem System bei Mitarbeitenden der Planungstelle (Workshop); klare Regelung der Verantwortung (nicht ausschließlich bei Planungsstelle); Angeordneter Wert (wie bisher) bei unplausiblen Werten, Zweifel oder Ausfall des Systems (zB 90 Bereitschaftsfahrende, Dokumentation erforderlich)\\
+        \hline
+        Steuerungsverantwortung & Projektleitung \\
+        \hline
+        Risikoüberwachung & \glqq Fühlung halten\grqq\ mit Planungstelle, Wöchentliche Dokumentation von Bedenken und Stimmung der Mitarbeitenden (Planungsstelle) während der Entwicklungsphase \\
+        \hline
+        Überwachungsverantwortung & Projektleitung \\
+        \hline
+    \end{tabular}
+    \caption{Bewertung von Risiko 2}
+    \label{tab:risikobewertung2}
+\end{table}
+
+\FloatBarrier
+\newpage
+\subsection{Risiko 5: Lieferverzug der Hardware}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \rowcolor{gray!30} \textbf{Risikofaktor} & \textbf{Beschreibung} \\
+        \hline
+        Risikonummer & 5 \\
+        \hline
+        Risikobeschreibung &Lieferverzug der Hardware \\
+        \hline
+        Risikoanalyse & Externe Einflussfaktoren, Projektdauer und Projektkosten erhöhen sich dadurch \\
+        \hline
+ 		 Eintrittswahrscheinlichkeit & Hoch \\        
+        \hline
+        Auswirkung & Gering; Die Umsetzung des Systems ist nicht zeitkritisch, Mit der verlängerten Projektdauer steigen jedoch die Personalkosten, die auf dieses Projekt gebucht werden.\\
+        \hline
+        Risikoniveau & \cellcolor{medium} Mittel \\
+        \hline
+        Risikosteuerung & Risikotransfer \\
+        \hline
+        Steuerungsmaßnahmen & Die erhöhten Kosten sind kalkulierbar und sollten sich in den ausgehandelten Lieferbedingungen (zB Pönale) wiederfinden. Das Risiko wird dadurch abgewälzt\\
+        \hline
+        Steuerungsverantwortung &Projektleitung \\
+        \hline
+        Risikoüberwachung & Dokumentation durch Auftragsvergabe der Hardwarebeschaffung, kein weiteres Monitoring nötig \\
+        \hline
+        Überwachungsverantwortung & Projektleitung \\
+        \hline
+    \end{tabular}
+    \caption{Bewertung von Risiko 5}
+    \label{tab:risikobewertung5}
+\end{table}

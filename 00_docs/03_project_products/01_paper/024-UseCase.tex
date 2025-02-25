@@ -1,0 +1,288 @@
+\chapter{Einleitung}
+
+Im gewählten Szenario geht es um die Herausforderung, die Planungslogik des Bereitschaftsdienstplans für den Berliner Rotkreuz-Rettungsdienst zu verbessern. Das, weiter unten beschriebene, Thema ist dem Modul \glqq Model Engineering\grqq\ des Masterstudienganges Data Science entnommen \citep{pak_aufgabenstellung_dlmdwme01_2024}, und wurde für zwei weitere Module adaptiert: 
+
+\begin{enumerate}
+  \itemsep-8pt
+  \item \textbf{Data Science UseCase:} Analyse des Anwendungsfalls bis zur Präsentation für die Freigabe durch das Management.
+  \item \textbf{Technische Projektplanung:} Aufbauend auf dem PitchDeck vom Projektstrukturplan über eine Kostenschätzung und das Risikomanagement bis zur Stakeholder-Analyse.
+  \item \textbf{Model Engineering:} Die Umsetzung des UseCase als Projekt in einem Git-Repository mit bereitgestellten Daten bis zu einem fertiggestellten Vorhersagemodel.
+\end{enumerate}
+
+Die Motivation, dieses Thema auch im Modul \glqq Data Science UseCase\grqq\ zu bearbeiten,  besteht darin, die Problemstellung aus mehreren Blickwinkeln zu behandeln und so ein durchgängiges Verständnis für die Abwicklung realer Szenarien zu erlangen. Die ganzheitliche Betrachtungsweise der Thematik lässt einen tieferen Einblick in die Prozesse der Data Science entstehen, erhöht die Identifikation mit dem UseCase und macht somit schlussendlich auch mehr Spaß.	
+
+\chapter{Konzeptionsphase}
+
+\section{Beschreibung des UseCase}
+
+Die DRK Rettungsdienst Berlin GmbH ist Teil der Notfallrettung in Berlin und Partner des Landes Berlin. Der Dienst besetzt Rettungs- und Intensivtransportwagen und absolviert jährlich tausende Alarmeinsätze im Berliner Stadtgebiet \citep{drk_rettungsdienst_2024}. Täglich sind hierbei mehrere Einsatzfahrende im Dienst. 
+
+Das beschriebene Szenario \citep{pak_aufgabenstellung_dlmdwme01_2024} sieht vor, pro Tag zusätzlich 90 weitere Fahrer:innen in Bereitschaft zu halten, um bedarfsgerecht agieren zu können.
+
+Die Planungsstelle für den Bereitschaftsdienstplan ist mit der Lösung einer fixen vorgehaltenen Anzahl an Bereitschaftsfahrenden nicht zufrieden. Meistens werden zu viele Fahrer:innen in Bereitschaft gehalten und müssen dafür natürlich auch entlohnt werden. Manchmal sind es jedoch auch zu wenige und dann muss zusätzliches Personal \glqq durchgerufen\grqq\ und aktiviert werden. Die Planungsstelle nimmt, aufgrund von Erfahrungswerten außerdem an, dass es saisonale Unterschiede in der Menge des benötigten Bereitschaftspersonals gibt, die bisher noch nicht berücksichtigt wurden.
+
+Der Rettungsdienst erörtert die Möglichkeiten, im Rahmen eines Projekts, eine effizientere Planung der erforderlichen Bereitschaften mit Hilfe von maschinellem Lernen zu realisieren. Daher soll vor der tatsächlichen Entscheidung über die Projektvergabe, der Anwendungsfall analysiert werden. Ziel dieser Analyse ist es, die Machbarkeit der Umsetzung des UseCases mit Methoden des DataScience zu untersuchen, möglichen Bedarf an zusätzlichen Informationen für die Umsetzung zu identifizieren und den Erfolg des Projektes messbar zu gestalten. 
+
+Als Vorgabe für einen Lösungsvorschlag im Rahmen der UseCase-Analyse wurde festgelegt, dass sich dieser nach der aktuellen Arbeitsweise der Planungsstelle richten muss. So wird zB der Bereitschaftsplan jeweils am 15. Tag des Vormonats fertiggestellt. Die Vorhersage eines maschinellen Lernmodells soll daher bereits spätestens am 10. des Vormonats den quantitativen Bedarf ermittelt haben, um dem Planungspersonal auch noch Zeit für die namentliche Besetzung des Plans einzuräumen. Außerdem soll ein dynamischer Bereitschaftsplan auch eine Schwankungsbreite berücksichtigen, sodass an keinem Tag zu wenig Bereitschaftsfahrende vorgesehen werden.
+
+
+\section{Verfügbarer Datenstand und Strategie zur Behebung von Informationslücken}
+\label{datenstand}
+
+Der Berliner Rotkreuz Rettungsdienst kann für die Untersuchung des Anwendungsfalls historische Daten bereitstellen, die in der Planungsstelle des Bereitschaftsplans gesammelt wurden. Die Daten wurden bereinigt und zusammengefasst, sodass keine personenbezogenen Daten enthalten sind und daher nicht weiter auf die Bestimmungen der Datenschutzgrundverordnung und des Datenschutzgesetzes Rücksicht genommen werden muss. Der Rettungsdienst nimmt den Datenschutz sehr ernst. Nach einer Datenschutzverletzung im Mai 2019, erfolgte eine systemische Umstellung der Datenerfassung, weshalb zur UseCase-Analyse ab diesem Zeitpunkt keine jüngeren Daten  mehr zur Verfügung stehen.
+
+Die vorliegenden Daten beinhalten, über einen Zeitraum von etwa drei Jahren, eine tageweise Aufstellung folgender Werte:
+ 
+\begin{itemize}
+ \itemsep-8pt
+ \item die Anzahl der Notrufe
+ \item die Anzahl der krankgemeldeten Einsatzfahrenden
+ \item die Anzahl der diensthabenden Fahrer:innen
+ \item die Anzahl des Personals im Bereitschaftsdienst
+ \item die Anzahl des aktivierten Bereitschaftspersonals
+ \item die Anzahl an zusätzlichem benötigten Personal über den Bereitschaftsdienst hinaus
+\end{itemize} 
+
+Dass die oben genannten Daten nur bis Mai 2019 erfasst wurden, ist für die Analyse des Anwendungsfalls selbst grundsätzlich kein Problem, würde jedoch zu einem späteren Zeitpunkt - in der Umsetzung - zu erheblichen Qualitätseinbußen eines Vorhersagemodells führen. Gerade in den Jahren nach 2019 haben sich einige globale Umgebungsvariablen des sozialen Zusammenlebens verändert, zB das Auftreten des \glqq Corona-Virus\grqq . Dadurch könnte, gerade in den hier benötigten Merkmalen, wie den Notfällen und den Krankenstandsmeldungen des Personals, ein maßgeblicher \textbf{Daten-Drift} stattgefunden haben. Wie bereits erwähnt, wird dieser Fakt den Schritt der UseCase-Analyse nicht behindern, aber das Ergebnis beeinflussen. Das Management sollte daher, bereits parallel, die Machbarkeit einer \textbf{Bereitstellung von aktuellen Daten} im Rahmen der gesetzlichen Vorschriften und Sicherheitsaspekte evaluieren. Die Analyse wird einstweilen unter der Annahme fortgesetzt, dass das Management hierbei erfolgreich sein wird.
+
+Die Vermutung der Planungsstelle, dass die vorliegenden Daten \textbf{saisonalen Schwankungen} unterliegen, wird vermutlich einen Ansatzpunkt der UseCase-Analyse darstellen. An dieser Stelle könnte man ein Vorhersagemodell mit allen möglichen, \textbf{zusätzlichen Daten} \glqq füttern\grqq . Temperatur und Wetterdaten könnten zum Beispiel verwendet werden um mögliche Krankenstandsakkumulationen vorherzusagen. Feiertage und Wochentage, sowie Schulferien und \glqq Zwickeltage\grqq\ (einzelne Tage zwischen Wochenenden und Feiertagen, die gerne frei genommen werden) könnten herangezogen werden um quantitative Unterschiede in den Notfällen aufgrund von Freizeitaktivitäten vorherzusagen, ebenso wie der Veranstaltungskalender der Stadt Berlin. Die Daten dieser Überlegungen sind grundsätzlich \textbf{online verfügbar}, die Beschaffung wäre daher kein großer Aufwand. Der Deutsche Wetterdienst stellt zB in seinem Downloadarchiv die Messwerte einzelner Stationen zur Verfügung \citep{dwd_wetter_2024}.  Im Rahmen der Datenaufbereitung und Merkmalsgenerierung des Vorhersagemodells wäre allerdings noch zu evaluieren, welche dieser Daten tatsächlich einen aussagekräftigen Mehrwert für eine Vorhersage liefern und welche eher zu einer Überanpassung des Modells führen.
+
+
+\chapter{Reflexionsphase}
+
+
+Der MachineLearning Canvas von \citet{dorard_machine_2022} ist ein Werkzeug zur Bearbeitung von MachineLearning UseCases. Er unterstützt dabei, die Umgebungsvariablen des UseCase strukturiert \glqq abzuklopfen\grqq\ und eine Planungsgrundlage für das weitere Vorgehen zu schaffen. Durch die thematische Aufteilung in mehrere Rubriken erleichtert der ML-Canvas die Zusammenarbeit im Team, da Expertisen aus verschiedenen Rollen einfach eingebracht werden können. Diesen Rubriken ist, gemäß Aufgabenstellung, im Folgenden jeweils ein eigener Punkt dieses Abschnitts gewidmet. Zuvor erläutert der erste Abschnitt dieses Kapitels aber noch geeignete Maßstäbe der Performanzmessung. 
+
+\section{Modell- und geschäftszentrierte Performanzmessung}
+Für eine, der Arbeitsaufgabe entsprechende, Darstellung geeigneter modell- und geschäftszentrierter Key Performance Indicators (KPIs) in Bezug auf die Güte des gegenständlichen Vorhersagemodells ist es notwendig, vorab den Begriff KPI im Allgemeinen zu diskutieren. Annahmen über die Definition von Erfolgsfaktoren des Berliner Rotkreuz-Rettungsdienstes dienen anschließend als Grundlage für relevante Performanzmetriken des MachineLearning Modells.
+
+\cite{hes_use_2022} beschreibt die Definition von \glqq Erfolg\grqq\ als zentralen Punkt der Evaluierung eines UseCase. Diese Definition entscheidet maßgeblich ob die Bewertung positiv oder negativ ausfällt. Dabei wird weiter unterschieden in die \textbf{modellzentrierte} und die \textbf{unternehmenszentrierte} Auswertung.  Erstere gibt an, ob das Modell unbekannte oder zukünftige Ereignisse anforderungsgemäß vorhersagen kann. 
+%Wichtig sind hierbei vor allem:
+%\begin{itemize}
+%\label{modellzentriert}
+% \itemsep-8pt
+% \item die Genauigkeit der Vorhehrsage
+% \item die Fehlerrate des Modells und in welche Richtung Fehler tendieren (zB eher false positive oder eher false negativ)
+% \item die Varianz der Vorhersage
+% \item ein erkannter Bias in der Vorhersage
+%\end{itemize}  
+Die unternehmenszentrierte Bewertung eines Projekts konzentriert sich dagegen auf jene Aspekte eines UseCase, die sich auf die Organisation auswirken, in dem dieser umgesetzt wird.  Es ist wichtig zu bewerten, ob sich Entscheidungen, die aus Vorhersagen resultieren, positiv oder negativ auf die Strategie der Organisation auswirken. Eine rein monetäre Bewertung ist in vielen Fällen nicht möglich, da die Entscheidungen oft von vielen Faktoren beeinflusst sind und wiederum andere Entscheidungen beeinflussen. Deshalb werden in der Praxis oft mehrere Kennzahlen (engl., Key Performance Indicators, KPIs) zur Evaluierung verwendet. \citep[S.62]{hes_use_2022}
+
+\subsection{KPIs im unternehmerischen Gesamtkontext}
+\label{parmenter}
+\cite{parmenter_key_2010} verfeinert die Aussagen von \cite{hes_use_2022} und wird hier noch spezifischer. Er unterteilt die obige Darstellung vom allgemeinen Begriff KPIs weiter in  Key Result Indicators (KRIs), Result Indicators (RIs), Performance Indicators (PIs) und Key Performance Indicators (KPIs). Gemeinsam mit den kritischen Erfolgsfaktoren (CSFs), sind diese auf die Mission, die Vision und auch die Werte der jeweiligen Organisation ausgerichtet. Die nachfolgende Darstellung veranschaulicht das Zusammenspiel dieser Elemente.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=10cm]{pics/Misson to PerformanceMeasures.png}
+\caption{Von der Mission zur Performanzmessung} \citep[S.35]{parmenter_key_2010}
+\label{fig:mission}
+\end{figure}
+
+\FloatBarrier
+
+In der Literatur oft nicht klar zu unterscheiden sind Key Performance- und Key Result Indicators:
+%\textbf{Kritische Erfolgsfaktoren} (CSFs) identifizieren jene Umstände, die Gesundheit und Lebensfähigkeit einer Organisation maßgeblich bestimmen. Bei \cite{parmenter_key_2010} werden diese, wie dargestellt, auf die sechs Perspektiven bzw. Schlüsselbereiche der Balanced Scorecard \citep{kaplan_balanced_1996} bezogen. Wenn kritische Erfolgsfaktoren erarbeitet werden entsteht häufig eine lange Liste an Faktoren, die als solche in Frage kommen. Optimalerweise werden diese Erfolgsfaktoren auf eine Anzahl von etwa fünf bis acht (je nach Organisationsstruktur) kritischen Erfolgsfaktoren reduziert. Die \textit{richtigen} kritischen Erfolgsfaktoren zu definieren erleichtert die Suche nach Key Performance Indicators erheblich.
+\begin{itemize}
+ \itemsep-8pt
+ \item \textbf{Key Result Indicators} (KRIs) inkludieren Metriken wie zB die Kundenzufriedenheit, den Gewinn, den Profit pro Kunde, oder auch Zufriedenheit des Personals. Allen KRIs ist gemein, dass sie das Ergebnis vieler Aktionen sind. Meistens decken sie eine längere Periode (zB monatlich oder vierteljährlich) ab und geben Auskunft darüber, ob man in die richtige Richtung steuert. Sie drücken also aus, was man in Bezug auf kritische Erfolgsfaktoren (CSFs) in der letzten Periode gemacht hat. Sie sagen jedoch nicht, was zu tun ist um diese Werte zu verbessern. KRIs werden oftmals mit KPIs verwechselt.
+
+ \item \textbf{Key Performance Inicators} (KPIs) sind auf KRIs ausgerichtet und repräsentieren jene Maßnahmen die für den aktuellen und zukünftigen Erfolg der Organisation kritisch sind. Analog zu KRIs werden sie aus der Masse an PIs ausgewählt und stehen mit zumindest einem CSF in unmittelbarem Zusammenhang. Sie werden in hoher Frequenz überwacht, werden von der oberen Managementebene geregelt, ermutigen das Personal die richtigen Aktionen zu setzen und können nicht monetär beschrieben werden.
+
+\end{itemize}
+
+%\textbf{Result Indicators} (RIs) fassen Aktivitäten und alle finanziellen Performance-Metriken zusammen. Hierunter können zB die Verkäufe des Vortages, der Gewinn bestimmter Produktlinien, oder Beschwerden von Top-Kunden fallen. Aus der Masse der RIs werden jene zu KRIs auserkoren, die mit einem oder mehreren kritischen Erfolgsfaktoren in unmittelbarem Zusammenhang stehen. 
+
+%\textbf{Performance Inicators} (PIs) stehen den RIs gegenüber und helfen Mitarbeiter:innen die richtigen Maßnahmen in Ausrichtung an die Unternehmensstrategie zu treffen. Performance Indicators sagen, was zu tun ist. PIs sind nie finanzielle Metriken. Teilweise kann es hier trotzdem zu Überschneidungen mit RIs kommen. Beispiele für PIs könnten sein: Für die nächste Woche geplante Verkaufstermine, Verspätete Lieferungen an Top-Kunden.
+
+\cite{parmenter_key_2010} verknüpft, wie bereits erwähnt, CSFs mit den sechs Perspektiven der Balanced Scorecard (BSC). Der österreichische Wirtschaftswissenschaftler Fredmund Malik erachtet die BSC als nicht ausreichend und formuliert stattdessen sechs Schlüsselgrößen für den Unternehmenserfolg \citep{manager-magazin_malik-kolumne_2005}. Hieraus werden, für die spätere Ableitung der KPIs des gegenständlichen UseCase, die nachfolgend beschriebenen exemplarisch gewählt:
+
+\begin{itemize}
+ \itemsep-8pt
+% \item Die \textbf{Marktstellung} eines Unternehmens bezogen auf jedes seiner Geschäftsgebiete. Eine mangelnde Definition des Begriffes der Marktstellung zwingt erfolgreiche Unternehmen, zu entscheiden, welche Faktoren die eigene Marktstellung ausreichend beschreiben und Kennziffern hierfür zu entwickeln. Die Verbesserung der Marktstellung muss Kernstück jeder Unternehmensstrategie sein.
+ \item Die \textbf{Innovationsleistung}. Hierunter fallen zum Beispiel der Umsatzanteil neuer Produkte, aber auch nach innen gerichtete Innovation wie etwa eine Erneuerung von Prozessen, Technologien oder Strukturen. Fehlende, nachlassende oder fehlgeleitete Innovation beschreibt Fredmund Malik als Warnsignal erster Ordnung.
+ \item Die \textbf{Produktivität} in all ihren Dimensionen. Die Kennziffern hierfür drücken sich in der Wertschöfpung pro Mitarbeiter, pro investierter Geldeinheit, sowie pro Zeiteinheit aus. Zukünftig wird man sich auch noch über die Definition einer Produktivität des Wissens Gedanken machen müssen. An Stelle der Idee des ständigem Wachstums tritt der Faktor einer laufenden Produktivitätsverbesserung.
+% \item Die \textbf{Attrakttivität für gute Leute} sagt viel über den Gesundheitszustand eines Unternehmens aus. Dabei ist größte Aufmerksamkeit geboten, wenn gute Mitarbeiter:innen beginnen das Unternehmen zu verlassen oder Schwierigkeiten bestehen solche überhaupt zu rekrutieren. Welches Personal von einem Unternehmen als \glqq gute Leute\grqq\ bezeichnet wird, ist eine wesentliche Schlüsselfrage dieses Erfolgsfaktors. Die Anziehungskraft des Betriebes ist hierauf auszurichten und Kündigungen in diesem Bereich sind selbstkritisch zu analysieren.
+% \item Die \textbf{Liquidität} ist ein finanzieller Erfolgsfaktor, der über die Manövrierfähigkeit eines Unternehmens Auskunft gibt. 
+% \item Als letzter Faktor wird die \textbf{Gewinnerfordernis} angeführt, die in Kontrast zu einer oftmals angestrebten Gewinnmaximierung steht. Bezeichnet wird damit der im Voraus beurteilte, monetäre Mindestbetrag, der aufgewendet werden muss um auch im folgenden Bilanzierungsjahr noch geschäftsfähig zu sein. 
+\end{itemize} 
+
+\subsection{Ableitung geeigneter KPIs für den UseCase}
+\label{drkkpi}
+Abbildung \ref{fig:mission} zeigt, dass Performance Indicators und Key Performance Indicators letztendlich aus der Unternehmensmission und den Unternehmenswerten abgeleitet werden. Die Perspektiven der Balanced Scorecard können genauso gut durch Maliks Schlüsselgrößen ersetzt werden. Entscheidend ist, in diesen Bereichen kritische Erfolgsfaktoren zu erarbeiten. Die Arbeit an Unternehmenswerten über Erfolgsfaktoren bis zur Performancemessung ist weder schnell noch einfach. Im nachfolgenden Versuch der Herleitung eines exemplarischen KPI aus geschäftszentrierter Sicht, soll dieser Weg skizziert werden. Die Beurteilung der CSF erfolgt dabei, wie oben erwähnt, bespielhaft in den Schlüsselgrößen Produktivität und Innovationsleitsung.
+
+\begin{wrapfigure}{l}{0.23\textwidth}
+\label{values}
+\centering
+\includegraphics[width=3.2cm]{pics/Unabhaengigkeit.png}
+\tiny{Quelle: \citep{drk_rettungsdienst_2024}}
+\end{wrapfigure}
+
+Im Leitsatz und Leitbild des Landesverbandes Berliner Rotes Kreuz \citep{drk_rettungsdienst_2024} wird unter anderem das Verhältnis zu anderen Institutionen und Organisationen aus Staat und Gesellschaft beschrieben. Darin wird festgehalten, das sich das Berliner Rote Kreuz seine Unabhängigkeit bewahrt, sich jedoch dem Wettbewerb mit anderen stellt, indem es die Qualität und auch die Wirtschaftlichkeit der Hilfeleistung verbessert. Qualität und Wirtschaftlichkeit können in diesem Kontext als jene Werte der Organisation betrachtet werden, die zur weiteren Beurteilung herangezogen werden.
+
+\begin{itemize}
+ \itemsep-8pt
+ \item Die \textbf{Qualität} einer Organisation ist in vielen Bereichen zu erkennen. Die Ausbildung des Personals, die Stringenz der Arbeitsprozesse, die eingesetzte Technologie, etc. sind nur einige Beispiele hierfür. Letztendlich bewertet jedoch die Wahrnehmung des Kunden ob ein Unternehmen qualitativ hochwertig arbeitet. \textit{Steigerung der Kundenzufriedenheit} wäre eine entsprechende Strategie.
+ \item \textbf{Wirtschaftlichkeit}: Nachdem das Rote Kreuz kein gewinnorientiertes Unternehmen ist, bedeutet wirtschaftliches Arbeiten die Einsparung unnötiger Kosten. Die Strategie lautet daher: \textit{Steigerung der Kosteneffizienz}
+\end{itemize} 
+
+Die weiteren Beurteilungsschritte werden in der nachfolgenden Tabelle \ref{tab:value2kpi} verkürzt dargestellt.
+
+\FloatBarrier
+\begin{center}
+\begin{table}[h]
+\begin{tabular}{|l|p{7cm}|p{7cm}|}
+\hline 
+\textbf{Wert} & \textbf{Qualität} & \textbf{Wirtschaftlichkeit} \\ 
+\hline 
+\textbf{Strategie} & Steigerung der Kundenzufriedenheit & Steigerung der Kosteneffizienz \\ 
+\hline 
+\textbf{Innovation} & Prozessoptimierung der \glqq time-to-target\grqq\ & Kostenreduktion durch Einsatz neuer Technologien \\ 
+\hline 
+\textbf{Produktivität} & schnellstmögliche Hilfeleistung &  Erhöhung der Wertschöpfung pro Arbeitsstunde \\ 
+\hline 
+\textbf{CSF} & Innerhalb 30 min am Einsatzort & unproduktive Arbeitsstunden minimieren \\ 
+\hline 
+\textbf{KRI} & Statistische Aufbereitung der \glqq time-to-target / no-shows\grqq\  & mittlere Personalkosten pro Notruf \\ 
+\hline 
+\textbf{KPI} & Fehlendes StandBy-Personal für die Bearbeitung eines Notrufs  & Obergrenze für nicht aktivierte StandBy-Kosten \\ 
+\hline 
+\end{tabular} 
+\caption{Ableiten von KPIs aus Werten}
+\label{tab:value2kpi}
+\end{table}
+\end{center}
+
+Gemäß \cite{parmenter_key_2010} sind KPIs Angelegenheit des oberen Managements und lösen auch eine Handlung beim Peronsal aus. In diesem Beispiel könnte zB der KPI \glqq Fehlendes StandBy-Personal für die Bearbeitung eines Notrufs\grqq\ einen Anruf der Planungsstelle beim Landesbereitschaftsleiter oder beim Vorstand nach sich ziehen. Ein Umstand den man als Planungspersonal unbedingt vermeiden möchte.
+
+Unter der Annahme, dass der gegenständliche UseCase tatsächlich, wie oben dargestellt, KPIs bedient und nicht nur normale Performance Inidicators, sind diese nun auch mit den geschäftszentrierten KPIs der Aufgabenstellung gleichzusetzen. Inhaltlich sind diese beiden Indikatoren wenig überraschend, wurden jedoch nachvollziehbar hergeleitet und konkretisiert. Das Vorhersagemodell wird aus unternehmerischer Sicht genau an diesen beiden Maßstäben bewertet werden.
+
+Die modellzentrierte Bewertung der Modellgüte ergibt sich aus dem geforderten Prediction Task des UseCase. Abhängigkeiten aus der geschäftzszentrierten Bewertung ergeben sich vor allem dann, wenn daraus - wie in diesem Fall - Anforderungen an eine Tendenz des Modells resultieren. Hier wird zB eine Tendenz zu \textit{false positives}, also fälschlicherweise eingeteiltem  Bereitschaftspersonal, verlangt. Eine mögliche Kostenfunktion für die Modellgüte wird im Abschnitt Impact Simulation (Punkt \ref{simulation}) erörtet.
+
+\section{Value Proposition}
+\label{value}
+Diese Rubrik stellt, auch optisch, ein zentrales Element des MachineLearning Canvas dar. Hier werden Bedarfsträger und deren Ziele erläutert, um festzuhalten wie diese von dem MachineLearning-System profitieren. Den Bereitschaftsfahrenden kommt der UseCase in sofern zugute, dass an Tagen mit vorhergesagtem niedrigeren Bedarf auch weniger Bereitschaften zu besetzen sind. Weniger Bereitschaften bedeuten für den Rettungsdienst auch eine Kostenersparnis. Gem. DRK-Reformtarifvertrag kostet eine eingeteilte, aber nicht abgerufene zwölfstündige Bereitschaft den Rettungsdienst etwa €~165,- \citep{deutsches_rotes_kreuz_drk-reformtarifvertrag_2023}. In der bisherigen Arbeitsweise wurden einfach 90 Bereitschaftsfahrende pro Tag vorgesehen. Daraus ergeben sich \textbf{Tageskosten} in der Höhe von €~14.850,-, wenn keine Bereitschaft benötigt wird. Wichtig ist jedoch ebenfalls, dass das Risiko eines Reputationsschadens durch eine mangelhafte Bereitschaftsbesetzung (reduzierte Einsatzbereitschaft) minimiert wird. Die monetäre Hinterlegung der Bereitschaftsdienste wird im Abschnitt Impact Simulation (Punkt \ref{simulation}) noch einmal erläutert.
+
+Für die Planungsstelle entsteht im täglichen Betrieb sogar ein zusätzlicher Aufwand, weil nun nicht mehr, wie bisher, einfach ein Fixwert angenommen und in ein unumstößliches \glqq Dienstrad\grqq\ gegossen wird. Nun müssen die vorhergesagten Werte geöffnet, übertragen und ggf. noch angepasst werden. Auf der anderen Seite steigt das Ansehen der Planungsstelle, weil hier innovativ und effizient gearbeitet wird.
+
+\section{Decisions}
+
+Dieses Thema beschäftigt sich mit der Frage, ich welchem Prozess aus den Vorhersagen ein Mehrwert für die Bedarfstragenden geschaffen wird. Der Berliner RotKreuz-Rettungsdienst gibt am 15. Tag jedes Monats den Bereitschaftsdienstplan für den Folgemonat an die Einsatzfahrer:innen aus. Die Umsetzung und namentliche Befüllung des Bereitschaftsplans übernimmt hierbei weiterhin das Personal der Planungsstelle. Um diese manuelle Tätigkeit kosten- und personaleffizienter zu gestalten, liefert die Vorhersage dieses UseCases bereits in den Morgenstunden des 10. Tages jedes Monats eine tageweise Aufstellung der vorhergesagten Anzahl an Bereitschaftspersonal für den Folgemonat. Damit hat die Planungsstelle noch weitere fünf Arbeitstage zeit, den Bereitschaftsplan im Detail umzusetzen.
+
+Das Format der Ausgabe kann sich nach den Wünschen des Planungspersonals richten. Aus Sicht der geschäftszentrierten Modellbewertung sollte dieser Wert jedoch, zur Dokumentation, als unveränderlicher Wert (read-only) ausgegeben werden. Beurteilt die Planungsstelle den Bedarf an Bereitschaftsfahrenden, zB aufgrund eines angekündigten außerordentlichen Ereignisses, für einen bestimmten Tag anders als vorhergesagt, ist es natürlich zulässig und auch notwendig, den vorhergesagten Wert überschreiben zu können. Dieser Entscheid darf jedoch keinen Einfluss auf die Bewertung der Vorhersageergebnisse haben.
+
+
+\section{Prediction Task}
+
+In diesem Bereich wird skizziert um welche Aufgabe des maschinellen Lernens es sich handelt und was die gewünschten Ergebnisse einer Vorhersage sein sollen. In diesem Fall handelt es sich um eine Regressionsaufgabe. Auf Basis von tageweisen Zeitreihendaten mit vermuteten saisonalen Schwankungen, soll der numerische Wert vorhergesagt werden, wie viele Bereitschaftsfahrende pro Tag benötigt werden. An dieser Stelle ist gedanklich mitzunehmen, dass eine zu niedrige Schätzung in jedem Fall vermieden werden soll. Diesem Umstand muss in der späteren modellzentrierten Bewertung der Anwendung unbedingt Rechnung getragen werden, da er wesentliche Auswirkung auf die Modellierung hat. 
+
+Der Dateninput besteht aus vorliegenden historischen Daten, wobei die laufende Akquise neuer Daten realistisch ist.
+
+\section{Making Predictions}
+
+Wann müssen Vorhersagen bereitgestellt werden, und wie viel Zeit bleibt für die Datenaufbereitung und die Berechnungen? Das DRK Berlin hat in diesem Fall keinen Bedarf an einer Echtzeitvorhersage. Modelltraining und Vorhersage finden am Anfang jedes Monats statt und müssen bis zum 10. Tag des Monats abgeschlossen sein. Das sind, im schlechtesten Fall, sechs Arbeitstage.
+
+Wurde veranlasst, dass die richtigen Daten bereits laufend in digitaler, maschinenverarbeitbarer Form an der richtigen Stelle abgelegt werden. Ist die Zeit für eine gegebenenfalls minimale Aufbereitung kaum noch relevant. Auch der Download von möglichen zusätzlichen Daten, ob manuell oder automatisch, lässt sich leicht in einem Arbeitstag erledigen. Das, möglicherweise etwas zeitaufwendigere, Training kann automatisiert (auch am Wochenende) gestartet werden, sobald die Daten aller Tage des Vormonats sowie mögliche zusätzliche Daten bereitstehen. 
+
+
+
+\section{Data Sources}
+
+\glqq Data Sources\grqq\ behandelt, wie der Name bereits verrät, die Datenherkunft. In diesem speziellen Fall, liegen die Daten für eine Vorhersage bereits alle beim DRK Berlin selbst auf, bzw. können dort erhoben werden. Externe Quellen sind grundsätzlich nicht notwendig, könnten jedoch das Modell verfeinern.
+
+Die täglichen Protokolle der tatsächlich benötigten Einsatzfahrer:innen dienen als Quelle für das Vorhersagemodell. Diese Protokolle sind im besten Fall digital verfügbar, oder müssen für das erste Training digitalisiert werden. Gleichzeitig sollte ein Prozess initiiert werden, der diese Aufzeichnungen in Zukunft digital verarbeitbar macht.
+
+Mögliche zusätzliche Daten für eine weitere Anreicherung des Vorhersagemodells, wie in Punkt \ref{features} angeführt, sind online verfügbar. 
+
+
+\section{Data Collection}
+
+Der Punkt \glqq Data Collection\grqq\ beschreibt die Strategie der Datenakquise. Diese umfasst sowohl die Beschaffung des initialen Datensatzes als auch Überlegungen zu den Parametern der Datenaktualisierung. Für den gegenständlichen UseCase ist ein initiales Datenpaket der Planungsstelle mit veralteten Zeitreihendaten, über einen Zeitraum von etwa drei Jahren, vorhanden. Dieser Datensatz kann für das Training, auf zeitlicher Basis in Trainings und Testdaten aufgeteilt werden. Um die Genauigkeit zu erhöhen ist eine zeitbasierte Kreuzvalidierung bei diesen Daten womöglich zielführend.
+
+Eine Schwachstelle des initialen Datensatzes ist mit Sicherheit das Alter der Aufzeichnungen. Es kann sehr wahrscheinlich von einem Datendrift, seit Erhebung dieser Daten, ausgegangen werden. Es scheint daher sinnvoll, in periodischen Abständen (zB am Ende jedes Monats) ein \glqq Retraining\grqq\ des Modells vorzunehmen und dabei jüngere Daten, je nach eingesetztem Algorithmus, ggf. höher zu Gewichten um Trends besser zu erkennen. Die tagesaktuelle Erhebung der notwendigen Daten im eigenen Unternehmen ist, aus technischer Sicht, in jedem Fall möglich. Der Prozess dazu muss jedoch erst geschaffen werden.
+
+Eine automatische Akquise und Bereitstellung der zusätzlichen Online-Daten muss, am besten direkt vom Projektteam, geprüft werden. Werden diese Daten als ausreichend relevant für die Vorhersagegenerierung beurteilt, sollte auch hier ein Prozess geschaffen werden, der diese Daten der Planungsstelle zur Verfügung stellt. In diesem Fall wird ebenso die Verantwortung über die Datenakquise noch zu regeln sein. Auch wenn eine Automatisierung der Beschaffung durch das Projektteam realisierbar ist, so muss dieser Prozess laufend in seiner Funktion überwacht werden. Diese Aufgabe fällt wahrscheinlich der Planungsstelle zu.
+
+\section{Features}
+\label{features}
+Die \glqq Features\grqq\ spiegeln jene Merkmale der verfügbaren Daten wider, die für ein Vorhersagemodell herangezogen werden können. Durch Featurizing generierte zusätzliche (bzw. stellvertretende) Merkmale können zum aktuellen Zeitpunkt noch nicht angeführt werden, da hierfür noch eine eingehende Datenanalyse notwendig ist. Zur Verfügung stehen, in diesem Anwendungsfall, Daten aus täglichen administrativen Aufzeichnungen aus der Organisation von Einsatzfahrten. Dies umfasst, wie bereits in Punkt \ref{datenstand} angeführt:
+
+\begin{itemize}
+ \itemsep-8pt
+ \item die Anzahl der Notrufe
+ \item die Anzahl der krankgemeldeten Einsatzfahrenden
+ \item die Anzahl der diensthabenden Fahrer:innen
+ \item die Anzahl des Personals im Bereitschaftsdienst
+ \item die Anzahl des aktivierten Bereitschaftspersonals
+ \item die Anzahl an zusätzlichem benötigten Personal über den Bereitschaftsdienst hinaus
+\end{itemize} 
+
+Hierzu können aus Online-Quellen weitere Features auf Tagesbasis hinzugefügt werden:
+
+\begin{itemize}
+ \itemsep-8pt
+ \item \textbf{Durchschnitltliche Tagestemperaturdaten aus dem Raum Berlin:} Diese Daten  in die Vorhersage mit einzubeziehen, könnte dabei helfen, die Theorie saisonal bedingter Schwankungen durch ein weiteres Feature zu stützen. Möglicherweise lässt sich die Saisonalität besser an der durchschnittlichen Außentemperatur festmachen, als schlichtweg an Monatsnamen. 
+ \item \textbf{Weitere Wetterdaten:} Denkbar wäre auch die Untersuchung logischer Wetterfeatures wie zB eisig, Starkregen oder wolkenlos und mehr als 25°C. Die Idee hierbei ist, dass das Verhalten der Bevölkerung an diesen besonderen Tagen möglicherweise Auswirkung auf eine Unfallwahrscheinlichkeit und damit auf einen Notruf haben kann. Der Einsatz dieser Daten ist jedoch in einer ersten Version des Modells unrealistisch, da für zum Zeitpunkt der Vorhersage keine validen Wetterprognosen des nächsten Monats bereitstehen. Außerdem besteht hier die größte Gefahr einer Überanpassung des Modells. Dennoch werden diese Überlegungen für eine Folgeversion der Vorhersage mitgenommen. Vorstellbar wäre zB eine laufende Selbstevaluierung der getätigten Vorhersagen des Modells durch einen weiteren MachineLearning Ansatz unter Einbeziehung dieser logischen Wettermerkmale und auch der Prognose für zB die nächste Woche. Wenn das Modell feststellt mit den initialen Berechnungen der nächsten Woche falsch gelegen zu sein, kann das Planungspersonal mit einer Notification veranlasst werden kurzfristig, aber immer noch vorausschauend den Stand des Bereitschaftspersonals für diesen Tag zu erhöhen. Diese Folgeversion bietet Material für eine zweite UseCase-Analyse, wenn der gegenständliche UseCase erfolgreich implementiert wurde.
+ \item \textbf{Wochen- und Feiertage:} Der Gedanke zur Berücksichtigung des Wochentages ist einfach. An Tagen, an denen Menschen tendenziell nicht ihrem beruflichen, gewohnten Tagesablauf folgen, besteht eine erhöhte Wahrscheinlichkeit eines Unfalls. Seien es sportliche Aktivitäten, oder handwerkliche Manipulationen im eigenen Haushalt, das Verhalten der Menschen an diesen Tagen hebt sich von der Norm ab. Das gilt es zu berücksichtigen. Vermutlich ist es ausreichend, das Feature nur mit einen logischen Wert zu hinterlegen, ob es sich bei diesem Tag um ein Wochenende oder einen Feiertag handelt.
+ \item \textbf{Geplante Veranstaltungen im Raum Berlin:} Große Veranstaltungen stellen für Rettungsdienste oft eine Herausforderung dar, bei der zusätzliches Personal in Bereitschaft gehalten werden muss. Der Einfachheit halber könnte zB ein kategorischer Wert dieses Feature spezifizieren. Zum Beispiel könnte \glqq 0\grqq\ für keine Verantstaltung, \glqq 1\grqq\ für eine Veranstaltung mit mehr als 5.000 Personen, \glqq 2\grqq\ für eine Veranstaltung mit mehr als 20.000 Personen, usw. stehen. Vermutlich ist es leichter, diese Daten durch das Planungspersonal manuell recherchieren und ablegen zu lassen. Erstens müsste anderenfalls ein weiteres MachineLearning Modell ggf. die Größe der Veranstaltung abschätzen, zweitens ist es für die Planungsstelle von Vorteil sich mit anstehenden, möglicherweise einsatzrelevanten Events zu beschäftigen. Historische Eventdaten werden wahrscheinlich nur zeit- und kostenaufwendig zu recherchieren sein. Bei dem gegenständlichen Vorhersagemodell ist vorgesehen, der Planungsstelle die manuelle Anpassung der berechneten Werte zu ermöglichen. Diese tragen schlussendlich auch die Verantwortung für den Bereitschaftsplan. Es ist daher möglich, ab dem Einsatzzeitpunktes des Modells, kategorisierte Veranstaltungen in der manuellen Dokumentation und Anpassung so zu vermerken, dass sie in Zukunft in das Berechnungsmodell mit einfließen können.
+\end{itemize} 
+
+Eine Erweiterung um diese zusätzlichen Merkmale muss in jedem Fall in der Datenanalyse und im Featurizing geprüft werden. Schließlich sollen nur jene Daten mit der größten Aussagekraft für eine Vorhersage herangezogen, und ein Übertraining vermieden werden.
+
+
+
+\section{Building Models}
+\label{building}
+Dieser Platz auf dem MachineLearning Canvas bietet die Möglichkeit, Überlegungen zum Vorhersagemodell festzuhalten. Beim Beispiel DRK Berlin handelt es sich um ein Modell, das initial auf der Basis von etwa drei Jahren Zeitreihendaten aufgebaut ist, und Anfang jedes Monats mit neuen Daten erweitert wird. Dabei wird immer über den gesamten vorhandenen Daten-Zeitraum trainiert, da die Muster schließlich in saisonalen Schwankungen gefunden werden sollen. Es wird daher ein monatliches Training des Modells angestrebt. Eine zeitkritische Einschränkung für die erste produktionsreife Implementierung des Modells wurde bei dieser Entwicklung nicht vorgegeben.
+
+Eine erste Liste, in Frage kommender, Algorithmen für die gegenständliche Aufgabe wird nachfolgend, auf Basis einer Konversation mit \cite{chatgpt2024} über Möglichkeiten und Vorzüge diverser MachineLearning Algorithmen zur Vorhersage in Zeitreihen, vorgeschlagen. 
+
+\begin{itemize}
+ \itemsep-8pt
+ \item \textbf{Long Short-Term Memory (LSTM) Netzwerke} sind eine spezielle Art von rekurrenten neuronalen Netzwerken, die sich gut eignen, wenn Daten starke zeitliche Abhängigkeiten oder saisonale Muster aufweisen.
+ \item \textbf{Facebook Prophet} wurde speziell für Zeitreihenvorhersagen entwickelt, unterstützt automatisch verschiedene Saisonalitäten und ist robust gegen plötzliche Änderungen und fehlende Daten. Prophet erfordert weniger manuelle Anpassungen als neuronale Netze.
+ \item \textbf{Random Forest Regressor} sind robust gegenüber Überanpassung und können komplexe nichtlineare Beziehungen in Daten erfassen. Sie sind jedoch nicht explizit für die Modellierung von zeitlichen Abhängigkeiten geschaffen.
+ \item \textbf{Seasonal Autoregressive Integrated Moving Average (SARIMA)} ist ein klassisches Modell für saisonale Zeitreihenanalysen. Das Modell ist gut interpretierbar und eignet sich vor allem für stark autoregressive Daten mit wenig externen Einflussgrößen
+ \item \textbf{XGBoost/LightGBM} sind leistungsfähige Gradient Boosting-Algorithmen, die oft schneller und skalierbarer sind als neuronale Netze. Sie benötigen jedoch ein explizites Feature-Engineering um die Zeitkomponente der Daten zu modellieren.
+ \item \textbf{Temporal Fusion Transformer (TFT)} kann sowohl lange als auch kurze zeitliche Abhängigkeiten in Zeitreihendaten erfassen. TFT eignet sich gut für komplexe zeitliche Muster mit einer großen Anzahl von Features.
+\end{itemize} 
+
+Die Vorteile hinsichtlich der Modellierung komplexer zeitlicher Muster überwiegen bei LSTM, TFT oder XGBoost/LightGBM, wo hingegen die Stärken von SARIMA und Prophet vor allem in der Interpretierbarkeit einfacher Zeitreihen liegen. In einer ersten Beurteilung scheint \glqq Facebook Prophet\grqq\ den Anforderungen dieses UseCase gut entgegenzukommen. Dieser Algorithmus verwendet ein zusammengesetztes Modell, dessen drei Hauptkomponenten den allgemeinen Trend, die Saisonalität sowie Feiertage und spezielle Ereignisse in Zeitreihen berechnen \citep[S.7]{taylor_forecasting_2017}. Bei Letzterer kann durch den Analysten selbst eine Liste mit vergangenen, aber auch zukünftigen, Ereignissen bereitgestellt werden \citep[S.12]{taylor_forecasting_2017}. Außerdem ist die Implementierung in vorrangig verwendeten Programmiersprachen wie Python oder R einfach umzusetzen.
+
+An dieser Stelle der UseCase Analsyse ist es hilfreich, den Rahmen möglicher Vorhersagemodelle abzustecken um dem anschließenden Projektmanagement eine Grundlage für die Aufwandsabschätzung der Implementierung zu bieten. Die eingehendere Beurteilung der Anwendbarkeit einzelner Algorithmen und auch der Vergleich und die Bewertung der gelieferten Ergebnisse verschiedener Modelle ist jedoch eine Aufgabe der Umsetzung des UseCase. Hier wird die endgültige Entscheidung über das verwendete Vorhersagemodell getroffen. 
+
+
+\section{Impact Simulation}
+\label{simulation}
+Unter den Punkt \glqq Impact Simulation\grqq\ fallen Überlegungen zur Bewertung des Vorhersagemodells vor einer Inbetriebnahme. In diesem Anwendungsfall werden, zum Beispiel, die tatsächlichen, täglichen Bereitschaftsfahrten des Test-Datensatzes mit der Vorhersage aus den Trainingsdaten verglichen. Die Performance wird gemessen an den Kosten, die für überschüssiges Bereitschaftspersonal angefallen wären, sowie am geschätzten Risiko und Aufwand zusätzliches Personal an jenen Tagen zu aktivieren, an denen die Berechnung eine zu geringe Bereitschaftsstärke vorhergesagt hätte. Nachdem ein mangelnder Bereitschaftspersonaleinsatz unbedingt vermieden werden soll, werden letztere Metriken in den Tests auch höher bewertet. Eine monetäre Hinterlegung der geschätzten Kosten muss vermutlich aus dem Bereich des Risikomanagements bereitgestellt werden, eine überschlagene Schätzung für eine erste Bewertung des Vorhersagemodells kann jedoch bereits anhand des DRK-Reformtarifvertrags erfolgen.
+
+Ein Kraftfahrer des Deutschen Rot Kreuz Rettungsdienstes (Entlohnungsgruppe 4) verdient in der niedrigsten Entgeltstufe €~2.767,69 brutto \citep{deutsches_rotes_kreuz_drk-reformtarifvertrag_2023}. Das entspricht, bei 20 Arbeitstagen, einem Stundenlohn von etwa €~18,- brutto. Bereitschaftsdienste werden nur zur Hälfte als Arbeitszeit berechnet, erhalten jedoch gemäß §13 des Reformtarifvertrages einen 25\%igen Zuschlag. Ein zwölf Stunden Bereitschaftsdienst kostet also etwa €~135,- plus den Arbeitgeberanteil der Sozialangaben, der in Deutschland noch einmal zwischen 21\% und 23\% ausmacht. Das sind, für den Rettungsdienst, insgesamt geschätzte Kosten in der Höhe von €~165,- pro Bereitschaftsfahrer:in, wie bereits im Abschnitt Value Proposition (Punkt \ref{value}) angeführt. Bisher wurde der Einfachheit halber durchgehend ein Bereitschaftsdienst von 90 Bereitschaftsfahrenden vorgesehen. Das sind für den Rettungsdienst \textbf{tägliche} Kosten in der Höhe von €~14.850,-, die ggf. nicht abgerufen werden. Die Monatskosten für, vom Vorhersagemodell avisierte aber nicht abgerufene, Bereitschaftsfahrten können beim Testen der generierten Modelle als direkter Wert für den Vergleich der Güte herangezogen werden. Das Risiko der Unterbesetzung ist monetär schwer auszudrücken. Das ist aber auch nicht notwendig, da es sich hierbei nahezu um ein K.O. Kriterium handelt. Ein deutlich überhöhter Strafbetrag (zB €~500.000,-) für jeden Tag an dem zusätzliche Bereitschaftsfahrende aktiviert werden müssen trägt diesem Kriterium Rechnung. Die Modellgüte drückt sich schlussendlich als Minimierung der zusammengesetzten Modellkosten aus. 
+
+Die namentliche Belegung des Bereitschaftsplans erfolgt auch in Zukunft weiterhin durch Personal. Es gibt auf maschineller Seite daher keine Fairness constraints. 
+
+
+\section{Monitoring}
+
+Dieser Bereich umfasst die Beschreibung von Metriken, die den Wert der Vorhersage und den Einfluss des MachineLearning UseCase auf die Planung der Bereitschaftsdienste quantifizieren. Die Arbeitsweise und der Erfolg des Systems kann, und soll, anhand dieser Metriken überwacht werden. Für das Monitoring des Modells werden an dieser Stelle jedoch nicht die geschäftszentrierten KPIs herangezogen, die im Abschnitt \ref{drkkpi} festgelegt wurden, sondern die KRIs, also die Key Result Indicators ausgewertet. Anhand dieser Messungen erkennt man rasch eine Verbesserung der jeweiligen Werte im Vergleich zu jener Zeit vor Einsatz des Modells. 
+
+Die erarbeiteten KRIs waren:
+\begin{itemize}
+ \itemsep-8pt
+ \item Eine statistisch Aufbereitete Messung der \glqq time-to-target\grqq\ , also der Zeit vom Anruf bis zum Eintreffen am Einsatzort bzw. der \glqq no-shows\grqq\ , das sind Notrufe, die nicht bedient werden konnten. Natürlich hängen diese Werte von viel mehr Faktoren ab, als den verfügbaren Bereitschaftsfahrer:innen. Die Vermeidung von Totalausfällen (no-shows) aufgrund mangelnden Bereitschaftspersonals wird aber eine wesentliche Ziffer für den Erfolg des Modells darstellen.
+ \item Die mittleren Personalkosten pro Notruf sollten mit einer akkuraten Planung der Bereitschaftsfahrenden merkbar abnehmen. Wenn man den o.a. Wert als K.O.-Kriterium für die Modellbewertung erachtet, so sagt dieser Wert (im Vergleich mit Vorangegangenen) aus, wie präzise das Modell arbeitet.
+\end{itemize} 
+
+Selbstverständlich können, in der ergebnisgetriebenen Entwicklung des Modells, noch weitere Metriken und Werte ausfindig gemacht werden, die eine erfolgreiche und effizienzfördernde Arbeit des Systems aussagekräftig überwachbar machen.
+
+\chapter{Breakdown}
+
+Ausgangspunkt dieser Arbeit war ein MachineLearning Szenario, das einem anderen Modul dieses Studienganges entnommen wurde. Dank der Zustimmung der zuständigen Tutoren wurde es möglich, dasselbe Thema in drei unabhängigen aber inhaltlich dennoch aneinander anschließenden Modulen zu bearbeiten. So bekommt der UseCase mehr Gestalt, erfordert überlegtes Vorgehen (um Nachfolgeschritte zu erleichtern) und erzielt einen synchronisierten Lerneffekt in Bezug auf den Gesamtprozess einer MachineLearning-Systemimplementierung. Eine Herausforderung, die dankbar angenommen wurde.
+
+Bei der Bearbeitung eines realitätsnahen Szenarios über einen längeren Zeitraum, zahlt es sich ebenso aus, neue Werkzeuge zur Umsetzung auszuprobieren. Für den UseCase wurde daher ein Git-Repository angelegt und einem Git-Projekt hinzugefügt. Die zeitliche Planung und die Tasks dieser Aufgabenstellung wurden in Form von Iterations, Meilensteinen und Issues über das Git-Projekt abgewickelt. Gleichzeitig wurde über das Repository die Versionskontrolle der LATEX-Dateien dieser Arbeit sichergestellt. Die beiden nachfolgenden Studienmodule sollen ebenfalls über dieses Git-Projekt (aber in jeweils eigenen Repositories) bearbeitet werden.
+
+Für die inhaltliche Ausarbeitung lieferte der MachineLearning Canvas einen guten, strukturierten Anhalt. Erste Überlegungen wurden hierbei initial im OnePager (siehe Anhang \ref{onepager}) notiert und erst danach im Hauptdokument ausformuliert und gegebenenfalls durch Literatur- oder Onlinerecherche vertieft. Die abschließende Überarbeitung der Initialversion des OnePagers diente zugleich als Reflexion der ursprünglichen Gedanken zum UseCase.
+
+Die Rückmeldung zu den eingereichten Zwischenergebnissen dieser Prüfungsform waren absolut konstruktiv, klar verständlich und eine wertvolle Unterstützung. Die iterative Vorgehensweise unterstützt einerseits die Vermittlung der Lerninhalte und schafft andererseits ein nachhaltiges Endprodukt, das auch als Referenz für zukünftige Aufgaben genutzt werden kann. 
+
+
