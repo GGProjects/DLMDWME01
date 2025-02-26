@@ -1,0 +1,30 @@
+DMLDWME01
+|
++---00_docs
+|	+---01_general_basics
+|	+---02_project_basics
+|	\---03_artifacts
+|		+---01_paper
+|		+---02_data_reports
+|		\---03_model_reports
+|   
++---01_data                     # 
+|   +---01_lake
+|	|	\---01_use_case_2
+|	|
+|   \---02_warehouse
+|
++---02_main		                # Hauptpackage der Software
+|   
++---02m1_model_standby_prediction
+|
++---02z_code_snippets
+|
++---03_tests
+|
+|       
+\---04_output                      # Verzeichnis aller generierten Ergebnisse
+	+---logs                    # Logausgaben
+	+---figures                 # Grafiken
+	\---data                    # SQLite Datenbank
+	
