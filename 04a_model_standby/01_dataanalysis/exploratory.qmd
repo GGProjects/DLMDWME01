@@ -1,0 +1,67 @@
+---
+title: "Exploratory Analysis: StandyBy Data"
+author: "Georg Grunsky"
+format: pdf
+editor: visual
+---
+
+## Reading the Data
+
+Two files provided: sickness_table.csv and sickness_table.xlsx Files are apparently the same. Needs to be checked:
+
+Reading the csv-file
+
+```{r}
+require(readr)
+sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
+    col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
+head(sickness_csv)
+```
+
+Reading the excel-file
+
+```{r}
+require(readxl)
+sickness_xls <- read_excel("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.xlsx", 
+    col_types = c("numeric", "date", "numeric", 
+        "numeric", "numeric", "numeric", "numeric", 
+        "numeric"))
+head(sickness_xls)
+```
+
+Identical check
+
+```{r}
+identical(sickness_csv, sickness_xls)
+```
+
+Quick identical check says false. Datastructure and Datasummary will be run on both datasets for detailed comparison.
+
+## Datastructure
+
+Print out data structure
+
+```{r}
+print("sickness_csv:")
+str(sickness_csv)
+print("-----------------------------")
+print("sickness_xls:")
+str(sickness_xls)
+```
+
+Writing data dictionary report
+
+```{r}
+attributes(sickness_csv)
+```
+
+## Data Summary
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

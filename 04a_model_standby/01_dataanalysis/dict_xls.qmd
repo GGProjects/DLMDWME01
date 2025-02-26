@@ -1,0 +1,50 @@
+---
+title: "Data Dictionary: StandyBy Data (.xlsx)"
+author: "Georg Grunsky"
+format: pdf
+editor: visual
+bibliography: references.bib
+---
+
+```{r}
+#| include: false
+require(readxl)
+
+filename <- "sickness_table.xlsx"
+path <- "../../01_data/01_lake/01_use_case_2/"
+ 
+sickness <- read_excel(paste0(path, filename), 
+    col_types = c("numeric", "date", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric"))
+```
+
+## Data description
+
+File name: **`{r} filename`**
+
+Saved in: **`{r} path`**
+
+The dataset has **`{r} nrow(sickness)`** observations of **`{r} length(names(sickness))`** variables and is of type **`{r} class(sickness)`**.
+
+The data structure shows following data types:
+
+```{r}
+#| echo: false
+str(sickness)
+```
+
+The description of the dataset is taken from the projects basic data document "Zusatzinformationen_DLMDWME01 [@pak_zusatzinformationen_dlmdwme01_2024]
+
+The file provides data about: Anzahl an Krankenständen, Notrufen, Ersatzfahrern im Bereitschaftsdienst und Zahl der zusätzlichen Einsatzfahrer, die aktiviert werden müssen (auf Tagesbasis)
+
+Description of variables
+
+-   ...1: Zähler
+-   date: Datum
+-   n_sick: Anzahl der Einsatzfahrer, die einen Krankenstand angemeldet haben
+-   calls: Anzahl der Notrufe
+-   n_duty: Anzahl der Einsatzfahrer im Dienst
+-   n_sby: Anzahl der verfügbaren Ersatzfahrer
+-   sby_need: Anzahl der Ersatzfahrer, die aktiviert werden
+-   dafted: Anzahl der zusätzlichen Einsatzfahrer, die aktiviert werden müssen, wenn die Anzahl der Einsatzfahrer im Bereitschaftsdienst nicht ausreicht
