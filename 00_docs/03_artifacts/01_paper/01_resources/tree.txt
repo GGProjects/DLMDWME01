@@ -1,30 +1,49 @@
 DMLDWME01
 |
-+---00_docs
-|	+---01_general_basics
-|	+---02_project_basics
-|	\---03_artifacts
-|		+---01_paper
-|		+---02_data_reports
-|		\---03_model_reports
++---00_docs                        # Dokumente
+|   +---01_general_basics          # unspezifische Grundlagen
+|   +---02_project_basics          # projekspezifische Grundlagen
+|   \---03_artifacts              /# Projektprodukte
+|       +---01_paper               # Latex Files dieser Arbeit
+|       +---02_data_reports        # Reports der Datenanalyse
+|       |   \---00_dictonaries     # Datenschema Beschreibungen
+|       |
+|       \---03_model_reports       # Reports der Modellerstellung
+|       \---[...models]            # Subfolder einzelner Modelle
 |   
-+---01_data                     # 
-|   +---01_lake
-|	|	\---01_use_case_2
-|	|
-|   \---02_warehouse
++---01_data                        # Datenbereitstellung 
+|   +---01_lake                    # Data Lake - Rohdatenspeicher
+|   |   \---01_use_case_2          # Rohdaten dieser Aufgabenstellung
+|   |
+|   \---02_warehouse               # Data Warehouse - Aufbereitete Daten
 |
-+---02_main		                # Hauptpackage der Software
++---02_config                      # Konfigurationsdateien
+|
++---03_main                        # Hauptmodul der Anwendung
+|
++---03[a-y]_...                    # einzelne Packages der Anwendung
 |   
-+---02m1_model_standby_prediction
++---02z_code_snippets              # Hilfscode - wird bei Abschluss entfernt
+|   +---00_own_snippets            # Eigene Hilfscodesammlung
+|   \---[...other snippets]        # Hilfscode anderer Quellen
 |
-+---02z_code_snippets
++---04a_model_standby             /# 04[a-z] Ordner der ML-Modelle    
+|   +---00_sample_data             # Beispieldaten zur Dokumentation 
+|   |   +---01_raw                 # Rohdatenauszug
+|   |   +---02_processed           # Auszug aufbereiteter Daten
+|   |   \---03_for_modelling       # Auszug der Trainingsdaten
+|   |
+|   +---01_dataanalysis            # Code explorativer Datenanalyse
+|   +---02_modeling                # Code der Modellerstellung
+|   \---03_deployment              # Code des Modeldeployments
+|       \---model_version_final.R  # Namenskonvention aktueller Modell-Version
 |
-+---03_tests
++---03_tests                       # Unittests
 |
-|       
-\---04_output                      # Verzeichnis aller generierten Ergebnisse
-	+---logs                    # Logausgaben
-	+---figures                 # Grafiken
-	\---data                    # SQLite Datenbank
-	
+\---04_output                      # Generierte Ergebnisse
+   +---01_documentation            # Softwaredokumentation
+   +---02_data                     # Datenausgabe
+   +---03_figures                  # Grafiken
+   +---04_logs                     # Logausgaben
+   \---05_apps                     # User Interfaces
+ 

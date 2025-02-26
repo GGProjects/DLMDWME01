@@ -52,10 +52,12 @@ Umsetzung nicht in einer Azure Umgebung, daher diesbezgl modifiziert.
 In der nachfolgenden Abbildung werden die wesentlichen Ordner und Dateien der bereitgestellten Programmstruktur dargestellt. Hervorzuheben ist hierbei das Package \emph{functionfinder}, das sämtliche Pythonmodule beinhaltet, die für die Programmfunktionalität verantwortlich sind, sowie das Modul \emph{ffrunner}, über das die eigentliche Ausführung des Programmes gestartet wird.
 Die übrigen Verzeichnisse des Projekts stehen für die bereitgestellten Daten (\emph{data}), die Dokumentation (\emph{docs}), die vom Programm erzeugten Ausgaben (\emph{output}), sowie für die vorgesehenen UnitTests (\emph{tests}) zur Verfügung.
 
+Ordnerstruktur ist für den Bedarf dieses Projektes zu umfangereich, Idee ist aber ein template für zukünftige Projekte zu schaffen, wo Modelle in eine Gesamtsoftware eingebetet sind. Die einzelnen Modell- und Packageordner könnten auch als eigene Git-Repos angelegt werden. Die Nummerierung sorgt für gleichbleibende Anordnung und leicht verwaltbare Strukturen
+
 \definecolor{mygray}{rgb}{0.9,0.9,0.9}
 \lstset{backgroundcolor=\color{mygray},
 	captionpos=b,  % sets the caption-position to bottom
-	emph={functionfinder, ffrunner}, 
+	emph={}, 
 	emphstyle=\color{red},
 	basicstyle=\small,
 	frame=single,
@@ -66,12 +68,14 @@ Die übrigen Verzeichnisse des Projekts stehen für die bereitgestellten Daten (
 \begin{figure}[h]
 \caption{Struktur des Ordneraufbaus}
 \begin{tabular}{c}  % the tabular makes the listing as small as possible and centers it
-\lstinputlisting[label=folder]{tree.txt}
+\lstinputlisting[label=folder]{01_resources/tree.txt}
 \end{tabular}\\
 \centering
 Quelle: Eigene Darstellung.
 \label{tab:structure}
 \end{figure}
+
+Ordnerstruktur ist sicher noch ausbaufähig, Änderungen werden sich noch ergeben. 
 
 %möglicherweise Grafik hinzufügen
 %Der logische Programmablauf gliedert sich, wie die angeführte Grafik zeigt, im Wesentlichen in drei Abschnitte, die auch im Hauptteil dieser Arbeit behandelt werden.
