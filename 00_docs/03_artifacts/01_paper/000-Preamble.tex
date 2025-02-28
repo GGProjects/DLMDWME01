@@ -1,0 +1,88 @@
+\usepackage{amsmath}
+\usepackage{bookmark}
+\usepackage{chngcntr}
+\counterwithout{footnote}{chapter}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+    
+\usepackage{scrhack}
+
+\usepackage{standalone}
+
+% get custom bibliography style working without prepending [brackets]
+\usepackage{natbib}
+\setcitestyle{aysep={}} % remove comma as delimiter 
+
+% breaks line at hyphens (resolves formatting issues in bibliography)
+\usepackage{txfonts} % Use a Times-new-roman open-source clone
+\usepackage{pythonhighlight}
+
+% if you insist on Arial... then uncomment the following
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{csvsimple-l3}
+\usepackage{booktabs}
+
+\usepackage{listings}
+\usepackage{color}
+
+\usepackage{caption}
+
+\usepackage{float}
+
+\setkomafont{chapter}{\Large} 
+\setkomafont{section}{\large}
+\setkomafont{subsection}{\large} 
+
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry} % margins
+\addtolength{\footskip}{-0.7cm} % foot larger by 0,7 cm  (Raises the page number)
+
+\usepackage[onehalfspacing]{setspace} % line space 1,5
+
+\setlength{\parindent}{0pt} % Indent at start of paragraphs 0pt %originally 6pt
+\setlength{\parskip}{6pt}
+
+\usepackage[utf8]{inputenc} %UTF-8 to encode many characters => for many characters, you can just input the character and avoid a macro
+
+\usepackage[ngerman]{babel} % german hyphenations
+\usepackage[T1]{fontenc} %wichtig für Trennung von Wörtern mit Umlauten
+\usepackage{microtype} % align margins
+
+\usepackage{graphicx} % import graphics
+\usepackage{placeins} % places the graphics within text
+\usepackage{wrapfig}
+\usepackage[export]{adjustbox}
+
+\usepackage{enumitem}
+\setlistdepth{6} % Maximal fünf Ebenen erlauben
+
+% Nummerierungsformat festlegen
+\setlist[enumerate,1]{label=\arabic*.}                     % 1., 2., 3., ...
+\setlist[enumerate,2]{label=\arabic{enumi}.\arabic*.}      % 1.1, 1.2, ...
+\setlist[enumerate,3]{label=\arabic{enumi}.\arabic{enumii}.\arabic*.} % 1.1.1, ...
+\setlist[enumerate,4]{label=\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.\arabic*.} % 1.1.1.1
+\setlist[enumerate,5]{label=\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.\arabic{enumiv}.\arabic*.} % 1.1.1.1.1
+\setlist[enumerate,6]{label=\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.\arabic{enumiv}.\arabic{enumv}.\arabic*.} % 1.1.1.1.1.1
+
+\usepackage{array}
+\usepackage{colortbl}
+
+\usepackage{xcolor}
+% Definiere neue Farben
+\definecolor{hellgelb}{RGB}{255, 255, 204}
+\definecolor{hellblau}{RGB}{204, 229, 255}
+\definecolor{hellrot}{RGB}{255, 204, 204}
+\definecolor{hellgreen}{RGB}{204, 255, 229}
+\definecolor{hellgrau}{RGB}{220, 220, 220}
+\definecolor{low}{RGB}{204, 255, 229}  % Grün
+\definecolor{medium}{RGB}{255, 255, 153} % Gelb
+\definecolor{high}{RGB}{255, 165, 0}  % Orange
+\definecolor{critical}{RGB}{255, 69, 0} % Rot
+
+% Abbreviation's directory
+% printonlyused - only if used
+% withpage - the first occurrence's page number is listed too
+\usepackage[withpage]{acronym}
+
+%\usepackage[hidelinks]{hyperref} %https://tex.stackexchange.com/questions/823/remove-ugly-borders-around-clickable-cross-references-and-hyperlinks

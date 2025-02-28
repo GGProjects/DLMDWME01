@@ -49,19 +49,70 @@ print("sickness_xls:")
 str(sickness_xls)
 ```
 
-Writing data dictionary report
-
-```{r}
-attributes(sickness_csv)
-```
-
 ## Data Summary
 
-You can add options to executable code like this
+Run base package summary on both data sets
 
 ```{r}
 #| echo: false
-2 * 2
+print("sickness_csv:")
+summary(sickness_csv)
+print("-----------------------------")
+print("sickness_xls:")
+summary(sickness_xls)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+Conclusion: Obviously the data sets are identical. In further exploration only the csv will be used. From the summary one can read that constant 90 n_sby is to much in most cases compared with sby_need but there are occasions where more than that is needed.
+
+## Overview variables
+
+```{r}
+plot(sickness_csv)
+```
+
+Conclusion: sby_need (the predicted variable) is apparently mostly depended on the number of calls, (which makes sense) and on dafted personnel (which will be ignored because that is to be avoided).
+A hint of dependency is also recognizable between the variables sby_need, calls and n_sick and the variable date, which could acknowledge the alleged seasonality of the data.
+It is advisable to shift the focus to these features.
+
+## Focus on specific variables
+
+```{r}
+plot(sickness_csv[,c(2:4,7)])
+```
+In this figure, it seems even more clearly that the date has an influence on the other three variables. Let's therefore generate some more features out of the date variable to see if it is possible to be more specific about this fact. The shown figures analyse the three variables in comparison to the new features.
+
+```{r}
+require(lubridate)
+require(dbplyr)
+sick <- sickness_csv[,c(2:4,7)]
+sick <- sick %>% dplyr::mutate(year = lubridate::year(date),
+                        month = lubridate::month(date),
+                        week = lubridate::week(date),
+                        wday = lubridate::wday(date))
+plot(sick[,c(4:8)])
+plot(sick[,c(2,5:8)])
+plot(sick[,c(3,5:8)])
+```
+Regarding the figures all three variables in question are mostly affected by the month and the week features. Let's get into more detail on this.
+
+```{r}
+require(ggplot2)
+require(plotly)
+require(data.table)
+require(reshape2)
+
+# reshape tables
+week <- reshape2::melt(sick[,c(2,4,7)], id.vars = "week") %>% 
+  dplyr::group_by(week, variable) %>%
+  dplyr::summarise(n = sum(value))
+
+p_week <- ggplot(data = week) +
+  geom_line(aes(x = week, y = n, colour = variable))
+
+ggplotly(p_week)
+
+```
+
+
+
+## Look for NAs and missing dates
