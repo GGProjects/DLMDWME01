@@ -126,6 +126,10 @@ bp -> sickness_csv
 
 Luckily we don't have to deal with either missing dates or values.
 
+## Data Quality
+
+asdfasdfaf
+
 ## Overview variables
 
 ```{r}
@@ -167,7 +171,8 @@ sick <- sick %>% dplyr::mutate(year = lubridate::year(date),
                         week = lubridate::week(date),
                         wday = lubridate::wday(date),
                         calls100 = calls/100,
-                        call_per_sick = calls/n_sick)
+                        call_per_sick = calls/n_sick, 
+                        day = lubridate::day(date))
 plot(sick[,c(4:8)])
 plot(sick[,c(2,5:8)])
 plot(sick[,c(3,5:8)])
@@ -175,7 +180,7 @@ plot(sick[,c(10,4:8)])
 plot(sick[,c(2,7,9)])
 ```
 
-Regarding the figures all three variables in question are mostly affected by the month and the week features. Plus, there seems to be a slight dependency of the target variable sby_need the new calls_per_sick feature (the value range is similar, so we'll get them on one plot). Let's get into more detail on this.
+Regarding the figures all three variables in question are mostly affected by the month and the week features. Plus, there seems to be a slight dependency of the target variable sby_need to the new calls_per_sick feature (the value range is similar, so we'll get them on one plot). Let's get into more detail on this.
 
 ```{r}
 #| message: false
@@ -186,17 +191,17 @@ require(data.table, quietly = T)
 require(reshape2, quietly = T)
 
 # reshape tables
-week <- reshape2::melt(sick[,c(4,7,9,10)], id.vars = "week") %>% 
+week <- reshape2::melt(sick[,c(2, 4,7,9,10)], id.vars = "week") %>% 
   dplyr::group_by(week, variable) %>%
-  dplyr::summarise(n = sum(value))
+  dplyr::summarise(n = mean(value))
 
-month <- reshape2::melt(sick[,c(4,6,9,10)], id.vars = "month") %>% 
+month <- reshape2::melt(sick[,c(2,4,6,9,10)], id.vars = "month") %>% 
   dplyr::group_by(month, variable) %>%
-  dplyr::summarise(n = sum(value))
+  dplyr::summarise(n = mean(value))
 
-weekday <- reshape2::melt(sick[,c(4,8,10)], id.vars = "wday") %>% 
+weekday <- reshape2::melt(sick[,c(2,4,8,10)], id.vars = "wday") %>% 
   dplyr::group_by(wday, variable) %>%
-  dplyr::summarise(n = sum(value))
+  dplyr::summarise(n = mean(value))
 
 p_weekday <- ggplot(data = weekday) +
   geom_line(aes(x = wday, y = n, colour = variable)) +
@@ -216,7 +221,25 @@ ggplotly(p_month)
 
 ```
 
-It looks like, with call_per_sick, we found a promising predictor of the target variable, with almost parallel smooth curves. For the seasonality the week scale seems fine, the monthly analyse was rather a little to general. Interestingly in the week scale, one can see periodically reoccurring peaks every 4-5 weeks between week 5 and 44. For call_per_sick the peaks are not as clearly visible as for sby_need and do sometimes have an offset to the latter. On the monthly scale, those peaks disappear completely, but we do see some higher values especially in the months may and august.
+It looks like, with call_per_sick, we found a promising predictor of the target variable, with almost parallel smooth curves. For the seasonality the week scale seems fine, the monthly analyse was rather a little to general. Interestingly in the week scale, one can see periodically reoccurring peaks every 3-5 weeks between week 5 and 44. For call_per_sick the peaks are not as clearly visible as for sby_need and do sometimes have an offset to the latter. On the monthly scale, those peaks disappear completely, but we do see some higher values especially in the months may and august.
+
+A 3-5 weeks period looks like the day of month could be of relevance. The next plot compares therefore the day of month to the possible predictors.
+
+```{r}
+#| message: false
+#| warning: false
+day <- reshape2::melt(sick[,c(2,4,9,10,11)], id.vars = "day") %>% 
+  dplyr::group_by(day, variable) %>%
+  dplyr::summarise(n = mean(value))
+
+p_day <- ggplot(data = day) +
+  geom_line(aes(x = day, y = n, colour = variable)) +
+  geom_smooth(aes(x = day, y = n, colour = variable))
+
+ggplotly(p_day)
+```
+
+The smooth curve shows an obvious downward trend at the beginning of each month. Smaller peaks occur approximately every three days. Regarding a seasonality pattern, the day of month is surly to be kept in mind.
 
 Let's also check the weekday scale, just to be complete.
 
@@ -228,9 +251,9 @@ ggplotly(p_weekday)
 
 ```
 
-The smooth curve seems odd, but I guess that's of the continuous display of discrete values. Still the lines contain no additional information.
+According to the smooth curve there seems to be a strong variance in the weekday pattern. Appearently, the lines contain no additional information.
 
-Lastly, see what it looks like if we a continuous weekly scale over the whole period. Possibly, there is a larger trend as well.
+Lastly, see what it looks like if we plot the continuous weekly scale over the whole period. Possibly, there is a larger trend as well.
 
 ```{r}
 #| message: false
@@ -238,7 +261,7 @@ Lastly, see what it looks like if we a continuous weekly scale over the whole pe
 weeks_per_year <- reshape2::melt(sick[,c(4,5,7,10)],
                                  id.vars = c("year","week")) %>%
   dplyr::group_by(year, week, variable) %>%
-  dplyr::summarise(n = sum(value)) %>%
+  dplyr::summarise(n = mean(value)) %>%
   dplyr::mutate(contweek = year + week/52)
   
   
@@ -272,7 +295,7 @@ The variable call_per_sick slightly decreases in the long trend but still seems 
 weeks_per_year2 <- reshape2::melt(sick[,c(4,5,7,9,10)],
                                  id.vars = c("year","week")) %>%
   dplyr::group_by(year, week, variable) %>%
-  dplyr::summarise(n = sum(value)) %>%
+  dplyr::summarise(n = mean(value)) %>%
   dplyr::mutate(contweek = year + week/52)
   
 # add 10 to sby_need == 0 to avoid log(0)
@@ -326,5 +349,5 @@ That doesn't look too bad. We do have reoccurring patterns and we have a small, 
 ## Over-all Conclusion:
 
 1.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
-2.  We possibly can use the call_per_sick feature as predictor regarding the logarithmic smooth curve on a weekly scale.
-3.  A linear regression based on smooth curves alone will probably not work out well. We still need to consider a strong weekly seasonality and a minor monthly seasonality.
+2.  We possibly can use the call_per_sick feature as predictor regarding the logarithmic smooth curve on a weekly scale. Still, in this case the calls and the number of sick drivers needs to be predicted first, because they will not be known in advance. According to the day of month-plot, that might a doable task.
+3.  A linear regression based on smooth curves alone will probably not work out well. We still need to consider a strong weekly seasonality, a dependence on the day of month and a minor monthly seasonality. To properly forceast sby_need values, a decomposition of the time-series data could be advisable.
