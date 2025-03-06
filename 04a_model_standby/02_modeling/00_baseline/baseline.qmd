@@ -229,6 +229,10 @@ kurze beschreibung der vorteile von facebook prophet für das baseline modell un
 
 Punkte bzw. workflow aus package beschreibung (ref)
 
+keine direkte integration von prohpet =\> eigene trainingsfunktion
+
+integration von prophet cv in trainingsfunktion, weil schlanker als caret-eigene createTimeSlices funktion
+
 vorteile be verwendung des caret packages hinsichtlich hyperparameter eigener kosten funktion und modelvergleich
 
 ```{r}
@@ -236,35 +240,76 @@ vorteile be verwendung des caret packages hinsichtlich hyperparameter eigener ko
 library(caret)
 library(prophet)
 library(dbplyr)
+library(plotly)
 
 # Benutzerdefinierte Modellfunktion für Prophet
-train.prophet <- function(x, y, wts, param, lev, last) {
+train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
   df <- cbind(x, y = y)
   m <- prophet(df)
-  return(list(model = m))
+  
+  # Cross-Validation durchführen
+  cv_results <- cross_validation(m, 
+                                 initial = 365.25, 
+                                 period = 30, 
+                                 horizon = 30,
+                                 units = "days")
+  
+  # Evaluation der Performance (z.B. RMSE)
+  metrics <- performance_metrics(cv_results)
+  return(list(model = m, cv_results = cv_results, metrics = metrics))
 }
+
 
 predict.prophet <- function(modelFit, x) {
   forecast <- predict(modelFit$model, x)
   return(forecast$yhat)
 }
 
-# Dann kannst du Prophet als Methode in `train()` verwenden
-prophet_model <- train(
-  y ~ ., 
-  data = df, 
-  method = "prophet", 
-  trControl = trainControl(method = "cv", number = 5),
-  tuneGrid = expand.grid(changepoint_prior_scale = 0.1)
-)
 
+
+```
+
+```{r}
+# Registriere die benutzerdefinierte Methode 'prophet' für caret
+prophet <- list(
+  label = "Prophet",
+  library = "prophet",
+  check = NULL,
+  loop = NULL,
+  type = "Regression",
+  parameters = data.frame(
+    parameter = c("changepoint_prior_scale", 
+                  "seasonality_prior_scale", 
+                  "holidays_prior_scale"),
+    class = c("numeric", "numeric", "numeric"),
+    label = c("Changepoint Prior Scale", 
+              "Seasonality Prior Scale",
+              "Holidays Prior Scale")
+    ),
+  grid = function(x, y, len = NULL, search = NULL) {
+    expand.grid(changepoint_prior_scale = seq(0.001, 0.1, length = 10),
+                seasonality_prior_scale = seq(0.01, 10, length = 10),
+                holidays_prior_scale = seq(0.01, 10, length = 10))
+    },
+  fit = train.prophet,
+  predict = predict.prophet,
+  prob = NULL,
+  levels = NULL,
+  tags = c("Time Series"),
+  sort = NULL,
+  notes = "Integrate facebook prophet model into caret package."
+)
 ```
 
 ### Cost function
 
 referenz use case
 
-```{undefined}
+```{r}
+# specific loss function
+lossfun <- function(actual, forecast) {
+  return(mean(abs((actual - forecast) / actual), na.rm = TRUE) * 100)
+}
 
 ```
 
@@ -278,64 +323,58 @@ df <- sickness_csv %>%
   
 ```
 
-### Cross validation
-
--   `trainControl(method = "timeslice")` sorgt für Rolling-Origin-CV.
-
--   `initialWindow = 150` bedeutet, dass die ersten 150 Tage fürs Training genutzt werden.
-
--   `horizon = 10` bedeutet, dass das Modell jeweils 10 Tage in die Zukunft vorhersagt.
-
--   `fixedWindow = FALSE` erlaubt ein sich erweiterndes Trainingsfenster.
-
--   `caret::train()` trainiert das `prophet`-Modell unter Verwendung der Cross-Validation.
-
-```{r}
-# Parameter für Cross-Validation
-initial <- 70  # Größe des initialen Trainingssets
-horizon <- 10  # Vorhersagehorizont
-period <- 10   # Schrittweite für die Verschiebung des Trainingsfensters
-
-# Zeitbasierte Cross-Validation Splits mit caret
-time_slices <- caret::createTimeSlices(1:nrow(df), initialWindow = initial, horizon = horizon, fixedWindow = FALSE)
-
-# specific loss function
-lossfun <- function(actual, forecast) {
-  return(mean(abs((actual - forecast) / actual), na.rm = TRUE) * 100)
-}
-
-# Cross-Validation Setup mit der eigenen Loss-Funktion
-control <- trainControl(method = "cv", number = 5, 
-                        summaryFunction = custom_loss)
-
-# Prophet-Modell mit eigener Loss-Funktion und Cross-Validation
-prophet_model <- train(
-  y ~ ., 
-  data = df, 
-  method = "prophet", 
-  trControl = control,
-  tuneGrid = expand.grid(changepoint_prior_scale = 0.1)
-)
-
-
-
-```
-
 ### Baseline 1: Facebook Prophet
 
 ```{r}
+# check hyperparameter in package description
+
+# tune hyperparameter
+tune_grid <- expand.grid(changepoint_prior_scale = c(0.01, 0.1, 0.5), # the more trend-changes the higher the value
+                         seasonality_prior_scale = c(10, 50, 100), # stronger seasonaliy effect needs higher values
+                         holidays_prior_scale = c(10, 50))
+
+# cv and loss_fun used as traincontrol w/ caret
+control <- trainControl(method = "cv", number = 5, 
+                        summaryFunction = custom_loss)
+
+# Dann kannst du Prophet als Methode in `train()` verwenden
+prophet_model <- train(
+  y ~ ., 
+  data = df, 
+  method = prophet)
+#, 
+  #trControl = control,
+  #tuneGrid = tune_grid
+#)
+  
+m <- prophet_model$model  # Zugriff auf das beste Modell
+future <- make_future_dataframe(m, periods = 30)
+forecast <- predict(m, future)
+
+p1 <- plot(m, forecast)  # Plot der Vorhersage
+ggplotly(p1)
+
+p2 <- plot_cross_validation_metric(cv_results, metric = "rmse", rolling_window = 0.1)
+ggplotly(p2)
+
+p3 <- prophet_plot_components(m, forecast, uncertainty = TRUE, plot_cap = TRUE, weekly_start = 0, yearly_start = 0, render_plot = TRUE )
 
 ```
 
-### Baseline 2: ???
+### Evaluierung (nach recherchieren)
 
 ```{r}
+models <- list(
+  prophet = prophet_model,
+  xgboost = train(y ~ ., data = df, method = "xgbTree", trControl = control),
+  glm = train(y ~ ., data = df, method = "glm", trControl = control)
+)
+
+# Modellvergleich mit Resampling
+resamples(models) %>% summary()
 
 
-
-
-
-
+ #? hybride modelle mit prophet?
   
  
 
