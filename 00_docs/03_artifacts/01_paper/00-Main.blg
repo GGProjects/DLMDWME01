@@ -7,12 +7,6 @@ Reallocating 'name_of_file' (item size: 1) to 17 items.
 A level-1 auxiliary file: 004-Abstract.aux
 Reallocating 'name_of_file' (item size: 1) to 22 items.
 A level-1 auxiliary file: 005-Abbreviations.aux
-Reallocating 'name_of_file' (item size: 1) to 14 items.
-A level-1 auxiliary file: 010-Intro.aux
-Reallocating 'name_of_file' (item size: 1) to 13 items.
-A level-1 auxiliary file: 025-Body.aux
-Reallocating 'name_of_file' (item size: 1) to 19 items.
-A level-1 auxiliary file: 030-Conclusion.aux
 Reallocating 'name_of_file' (item size: 1) to 5 items.
 The style file: iubh.bst
 Reallocating 'name_of_file' (item size: 1) to 11 items.
@@ -23,7 +17,7 @@ Warning--I didn't find a database entry for "griffioen_hgrifexample-project_2023
 Warning--I didn't find a database entry for "noauthor_azureazure-tdsp-projecttemplate_2025"
 You've used 7 entries,
             2775 wiz_defined-function locations,
-            619 strings with 5730 characters,
+            616 strings with 5687 characters,
 and the built_in function-call counts, 2930 in all, are:
 = -- 238
 > -- 117

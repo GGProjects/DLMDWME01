@@ -1,0 +1,38 @@
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.2) (preloaded format=xelatex 2025.2.28)  28 FEB 2025 02:43
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**./dict_csv.tex
+(dict_csv.tex
+LaTeX2e <2024-11-01> patch level 2
+L3 programming layer <2025-01-18>
+(C:\Program Files\MiKTeX\tex/latex/subfiles\subfiles.cls
+Document Class: subfiles 2020/11/14 v2.2 Multi-file projects (class)
+Preamble taken from file `a4paper'
+(C:\Program Files\MiKTeX\tex/latex/import\import.sty
+Package: import 2020/04/01  v 6.2
+)
+
+! LaTeX Error: File `a4paper.tex' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: tex)
+
+Enter file name: 
+! Emergency stop.
+<read *> 
+         
+l.45 \input{\preamble@file}
+                           ^^M
+*** (cannot \read from terminal in nonstop modes)
+
+ 
+Here is how much of TeX's memory you used:
+ 84 strings out of 408640
+ 1572 string characters out of 5749145
+ 385867 words of memory out of 5000000
+ 23219 multiletter control sequences out of 15000+600000
+ 558837 words of font info for 36 fonts, out of 8000000 for 9000
+ 1348 hyphenation exceptions out of 8191
+ 42i,0n,55p,148b,17s stack positions out of 10000i,1000n,20000p,200000b,200000s
+No pages of output.
