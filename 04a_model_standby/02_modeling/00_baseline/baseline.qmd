@@ -1,0 +1,344 @@
+---
+title: "Baseline Modelling and initial preasumptions"
+author: "Georg Grunsky"
+format: html
+editor: visual
+---
+
+## Preassumptions
+
+### Use Case Analysis
+
+#### Building Models
+
+Dieser Platz auf dem MachineLearning Canvas bietet die Möglichkeit, Überlegungen zum Vorhersa- gemodell festzuhalten. Beim Beispiel DRK Berlin handelt es sich um ein Modell, das initial auf der Basis von etwa drei Jahren Zeitreihendaten aufgebaut ist, und Anfang jedes Monats mit neuen Daten erweitert wird. Dabei wird immer über den gesamten vorhandenen Daten-Zeitraum trainiert, da die Muster schließlich in saisonalen Schwankungen gefunden werden sollen. Es wird daher ein monatli- ches Training des Modells angestrebt. Eine zeitkritische Einschränkung für die erste produktionsreife Implementierung des Modells wurde bei dieser Entwicklung nicht vorgegeben. Eine erste Liste, in Frage kommender, Algorithmen für die gegenständliche Aufgabe wird nachfol- gend, auf Basis einer Konversation mit ChatGPT (2024) über Möglichkeiten und Vorzüge diverser MachineLearning Algorithmen zur Vorhersage in Zeitreihen, vorgeschlagen.
+
+• Long Short-Term Memory (LSTM) Netzwerke sind eine spezielle Art von rekurrenten neurona- len Netzwerken, die sich gut eignen, wenn Daten starke zeitliche Abhängigkeiten oder saisonale Muster aufweisen.
+
+• Facebook Prophet wurde speziell für Zeitreihenvorhersagen entwickelt, unterstützt automatisch verschiedene Saisonalitäten und ist robust gegen plötzliche Änderungen und fehlende Daten. Prophet erfordert weniger manuelle Anpassungen als neuronale Netze.
+
+• Random Forest Regressor sind robust gegenüber Überanpassung und können komplexe nichtlineare Beziehungen in Daten erfassen. Sie sind jedoch nicht explizit für die Modellierung von zeitlichen Abhängigkeiten geschaffen.
+
+• Seasonal Autoregressive Integrated Moving Average (SARIMA) ist ein klassisches Modell für saisonale Zeitreihenanalysen. Das Modell ist gut interpretierbar und eignet sich vor allem für stark autoregressive Daten mit wenig externen Einflussgrößen
+
+• XGBoost/LightGBM sind leistungsfähige Gradient Boosting-Algorithmen, die oft schneller und skalierbarer sind als neuronale Netze. Sie benötigen jedoch ein explizites Feature-Engineering um die Zeitkomponente der Daten zu modellieren.
+
+• Temporal Fusion Transformer (TFT) kann sowohl lange als auch kurze zeitliche Abhängigkeiten in Zeitreihendaten erfassen. TFT eignet sich gut für komplexe zeitliche Muster mit einer großen Anzahl von Features.
+
+Die Vorteile hinsichtlich der Modellierung komplexer zeitlicher Muster überwiegen bei LSTM, TFT oder XGBoost/LightGBM, wo hingegen die Stärken von SARIMA und Prophet vor allem in der Interpretierbarkeit einfacher Zeitreihen liegen. In einer ersten Beurteilung scheint „Facebook Prophet“ den Anforderungen dieses UseCase gut entgegenzukommen. Dieser Algorithmus verwendet ein zusammengesetztes Modell, dessen drei Hauptkomponenten den allgemeinen Trend, die Saisonalität sowie Feiertage und spezielle Ereignisse in Zeitreihen berechnen (Taylor / Letham 2017, S.7). Bei Letzterer kann durch den Analysten selbst eine Liste mit vergangenen, aber auch zukünftigen, Ereignissen bereitgestellt werden (Taylor / Letham 2017, S.12). Außerdem ist die Implementierung in vorrangig verwendeten Programmiersprachen wie Python oder R einfach umzusetzen. An dieser Stelle der UseCase Analsyse ist es hilfreich, den Rahmen möglicher Vorhersagemodelle abzustecken um dem anschließenden Projektmanagement eine Grundlage für die Aufwandsabschät- zung der Implementierung zu bieten. Die eingehendere Beurteilung der Anwendbarkeit einzelner Algorithmen und auch der Vergleich und die Bewertung der gelieferten Ergebnisse verschiedener Modelle ist jedoch eine Aufgabe der Umsetzung des UseCase. Hier wird die endgültige Entscheidung über das verwendete Vorhersagemodell getroffen.
+
+#### Impact Simulation
+
+Unter den Punkt „Impact Simulation“ fallen Überlegungen zur Bewertung des Vorhersagemodells vor einer Inbetriebnahme. In diesem Anwendungsfall werden, zum Beispiel, die tatsächlichen, täglichen Bereitschaftsfahrten des Test-Datensatzes mit der Vorhersage aus den Trainingsdaten verglichen. Die Performance wird gemessen an den Kosten, die für überschüssiges Bereitschaftspersonal angefallen wären, sowie am geschätzten Risiko und Aufwand zusätzliches Personal an jenen Tagen zu aktivieren, an denen die Berechnung eine zu geringe Bereitschaftsstärke vorhergesagt hätte. Nachdem ein man- gelnder Bereitschaftspersonaleinsatz unbedingt vermieden werden soll, werden letztere Metriken in den Tests auch höher bewertet. Eine monetäre Hinterlegung der geschätzten Kosten muss vermutlich aus dem Bereich des Risikomanagements bereitgestellt werden, eine überschlagene Schätzung für ei- ne erste Bewertung des Vorhersagemodells kann jedoch bereits anhand des DRK-Reformtarifvertrags erfolgen. Ein Kraftfahrer des Deutschen Rot Kreuz Rettungsdienstes (Entlohnungsgruppe 4) verdient in der niedrigsten Entgeltstufe C 2.767,69 brutto (Deutsches Rotes Kreuz 2023). Das entspricht, bei 20 Arbeitstagen, einem Stundenlohn von etwa C 18,- brutto. Bereitschaftsdienste werden nur zur Hälfte als Arbeitszeit berechnet, erhalten jedoch gemäß §13 des Reformtarifvertrages einen 25%igen Zuschlag. Ein zwölf Stunden Bereitschaftsdienst kostet also etwa C 135,- plus den Arbeitgeberanteil der Sozialangaben, der in Deutschland noch einmal zwischen 21% und 23% ausmacht. Das sind, für den Rettungsdienst, insgesamt geschätzte Kosten in der Höhe von C 165,- pro Bereitschaftsfahrer:in, wie bereits im Abschnitt Value Proposition (Punkt 3.2) angeführt. Bisher wurde der Einfachheit halber durchgehend ein Bereitschaftsdienst von 90 Bereitschaftsfahrenden vorgesehen. Das sind für den Rettungsdienst tägliche Kosten in der Höhe von C 14.850,-, die ggf. nicht abgerufen werden. Die Monatskosten für, vom Vorhersagemodell avisierte aber nicht abgerufene, Bereitschaftsfahrten können beim Testen der generierten Modelle als direkter Wert für den Vergleich der Güte herangezogen werden. Das Risiko der Unterbesetzung ist monetär schwer auszudrücken. Das ist aber auch nicht notwendig, da es sich hierbei nahezu um ein K.O. Kriterium handelt. Ein deutlich überhöhter Strafbetrag (zB C 500.000,-) für jeden Tag an dem zusätzliche Bereitschaftsfahrende aktiviert werden müssen trägt diesem Kriterium Rechnung. Die Modellgüte drückt sich schlussendlich als Minimierung der 12 zusammengesetzten Modellkosten aus. Die namentliche Belegung des Bereitschaftsplans erfolgt auch in Zukunft weiterhin durch Personal. Es gibt auf maschineller Seite daher keine Fairness constraints.
+
+#### Monitoring
+
+Dieser Bereich umfasst die Beschreibung von Metriken, die den Wert der Vorhersage und den Einfluss des MachineLearning UseCase auf die Planung der Bereitschaftsdienste quantifizieren. Die Arbeits- weise und der Erfolg des Systems kann, und soll, anhand dieser Metriken überwacht werden. Für das Monitoring des Modells werden an dieser Stelle jedoch nicht die geschäftszentrierten KPIs herange- zogen, die im Abschnitt 3.1.2 festgelegt wurden, sondern die KRIs, also die Key Result Indicators ausgewertet. Anhand dieser Messungen erkennt man rasch eine Verbesserung der jeweiligen Werte im Vergleich zu jener Zeit vor Einsatz des Modells. Die erarbeiteten KRIs waren:
+
+• Eine statistisch Aufbereitete Messung der „time-to-target“ , also der Zeit vom Anruf bis zum Eintreffen am Einsatzort bzw. der „no-shows“ , das sind Notrufe, die nicht bedient werden konnten. Natürlich hängen diese Werte von viel mehr Faktoren ab, als den verfügbaren Be- reitschaftsfahrer:innen. Die Vermeidung von Totalausfällen (no-shows) aufgrund mangelnden Bereitschaftspersonals wird aber eine wesentliche Ziffer für den Erfolg des Modells darstellen.
+
+• Die mittleren Personalkosten pro Notruf sollten mit einer akkuraten Planung der Bereitschaftsfah- renden merkbar abnehmen. Wenn man den o.a. Wert als K.O.-Kriterium für die Modellbewertung erachtet, so sagt dieser Wert (im Vergleich mit Vorangegangenen) aus, wie präzise das Modell arbeitet. Selbstverständlich können, in der ergebnisgetriebenen Entwicklung des Modells, noch weitere Metriken und Werte ausfindig gemacht werden, die eine erfolgreiche und effizienzfördernde Arbeit des Systems aussagekräftig überwachbar machen.
+
+## Reading the csv-file
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+require(readr)
+sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
+    col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
+head(sickness_csv)
+```
+
+The first plot shows, that n_duty has only three different values which are not affected by n_sick. We won't have influence on n_duty with our prediction model in the first run, so we can ignore that variable. It also shows that there seems to be no dependency between n_sick and calls. Still there are two ideas
+
+1.  We know from a previous analysis that n_sick and calls possibly have a similar value distribution (only by a factor of 100) but are not related to each other. Still it will be difficult to get these two variables on the same plot. Let's try to add a feature with divided calls by 100 to get them on the same scale.
+2.  It sounds logical, that the more sick personel the more reduced the ability to respond to emergency calls (even that n_duty was not related to n_sick). Probably it might be interesting to add another feature that shows calls per sick personnel to describe the mentioned ability to respond to emergencies. If there was a relation between those to, the average result would be around 100 (the factor), but fortunately there wasn't.
+
+In the second figure, it seems even more clearly that the date has an influence on the other three variables. Let's therefore generate some more features out of the date variable to see if it is possible to be more specific about this fact. The shown figures analyse the three variables in comparison to the new features.
+
+```{r}
+#| message: false
+#| warning: false
+require(lubridate, quietly = T)
+require(dbplyr, quietly = T)
+sick <- sickness_csv[,c(2:4,7)]
+sick <- sick %>% dplyr::mutate(year = lubridate::year(date),
+                        month = lubridate::month(date),
+                        week = lubridate::week(date),
+                        wday = lubridate::wday(date),
+                        calls100 = calls/100,
+                        call_per_sick = calls/n_sick)
+plot(sick[,c(4:8)])
+plot(sick[,c(2,5:8)])
+plot(sick[,c(3,5:8)])
+plot(sick[,c(10,4:8)])
+plot(sick[,c(2,7,9)])
+```
+
+Regarding the figures all three variables in question are mostly affected by the month and the week features. Plus, there seems to be a slight dependency of the target variable sby_need the new calls_per_sick feature (the value range is similar, so we'll get them on one plot). Let's get into more detail on this.
+
+```{r}
+#| message: false
+#| warning: false
+require(ggplot2, quietly = T)
+require(plotly, quietly = T)
+require(data.table, quietly = T)
+require(reshape2, quietly = T)
+
+# reshape tables
+week <- reshape2::melt(sick[,c(4,7,9,10)], id.vars = "week") %>% 
+  dplyr::group_by(week, variable) %>%
+  dplyr::summarise(n = sum(value))
+
+month <- reshape2::melt(sick[,c(4,6,9,10)], id.vars = "month") %>% 
+  dplyr::group_by(month, variable) %>%
+  dplyr::summarise(n = sum(value))
+
+weekday <- reshape2::melt(sick[,c(4,8,10)], id.vars = "wday") %>% 
+  dplyr::group_by(wday, variable) %>%
+  dplyr::summarise(n = sum(value))
+
+p_weekday <- ggplot(data = weekday) +
+  geom_line(aes(x = wday, y = n, colour = variable)) +
+  geom_smooth(aes(x = wday, y = n, colour = variable))
+
+p_week <- ggplot(data = week) +
+  geom_line(aes(x = week, y = n, colour = variable)) +
+  geom_smooth(aes(x = week, y = n, colour = variable))
+
+p_month <- ggplot(data = month) +
+  geom_line(aes(x = month, y = n, colour = variable)) +
+  geom_smooth(aes(x = month, y = n, colour = variable))
+
+
+ggplotly(p_week)
+ggplotly(p_month)
+
+```
+
+It looks like, with call_per_sick, we found a promising predictor of the target variable, with almost parallel smooth curves. For the seasonality the week scale seems fine, the monthly analyse was rather a little to general. Interestingly in the week scale, one can see periodically reoccurring peaks every 4-5 weeks between week 5 and 44. For call_per_sick the peaks are not as clearly visible as for sby_need and do sometimes have an offset to the latter. On the monthly scale, those peaks disappear completely, but we do see some higher values especially in the months may and august.
+
+Lastly, see what it looks like if we a continuous weekly scale over the whole period. Possibly, there is a larger trend as well.
+
+```{r}
+#| message: false
+#| warning: false
+weeks_per_year <- reshape2::melt(sick[,c(4,5,7,10)],
+                                 id.vars = c("year","week")) %>%
+  dplyr::group_by(year, week, variable) %>%
+  dplyr::summarise(n = sum(value)) %>%
+  dplyr::mutate(contweek = year + week/52)
+  
+  
+
+p_wpy <- ggplot(data = weeks_per_year) +
+  geom_line(aes(x = contweek, 
+                # x = week,
+                y = n,
+                colour = variable)) +
+                # colour = as.factor(paste0(variable,year)), 
+                # group = year)) +
+  geom_smooth(aes(x = contweek, 
+                  # x = week,
+                  y = n, 
+                  colour = variable))
+                  # colour = as.factor(paste0(variable,year)), 
+                  # group = year))
+
+ggplotly(p_wpy)
+
+```
+
+The variable call_per_sick slightly decreases in the long trend but still seems to be a good predictor until start of 2019. By 2019 call_per_sick loses its predictive ability due to the rapid increase of sby_need. There are two ideas to possibly face that.
+
+1.  Add call100 to this figure to see if this feature could help
+2.  Try logarithmic scale, if we could flatten the sby_need trend, adding 1 to where sby_need == 0 for displaying logarithmic values.
+
+```{r}
+#| message: false
+#| warning: false
+weeks_per_year2 <- reshape2::melt(sick[,c(4,5,7,9,10)],
+                                 id.vars = c("year","week")) %>%
+  dplyr::group_by(year, week, variable) %>%
+  dplyr::summarise(n = sum(value)) %>%
+  dplyr::mutate(contweek = year + week/52)
+  
+# add 10 to sby_need == 0 to avoid log(0)
+weeks_per_year2[(weeks_per_year2$variable == "sby_need" & 
+                 weeks_per_year2$n == 0), "n"] <- 1
+
+p_wpy2 <- ggplot(data = weeks_per_year2) +
+  geom_line(aes(x = contweek, 
+                # x = week,
+                # y = n,
+                y = log(n),
+                colour = variable)) +
+                # colour = as.factor(paste0(variable,year)), 
+                # group = year)) +
+  geom_smooth(aes(x = contweek, 
+                  # x = week,
+                  # y = n, 
+                  y = log(n), 
+                  colour = variable))
+                  # colour = as.factor(paste0(variable,year)), 
+                  # group = year))
+
+ggplotly(p_wpy2)
+```
+
+Conclusion:
+
+1.  calls100 doesn't help.
+2.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
+3.  The logarithmic scale seems to have a positive effect on the ability for call_per_sick to work as a predictor regarding the smooth curve. We could try to acknowledge that if we divide log(call_per_sick) by log(sby_need). The more flatten the line, the more dependency we have (see figure below).
+4.  A linear regression based on smooth curves will probably not work out well. We still need to consider a strong weekly seasonality and a minor monthly seasonality.
+
+```{r}
+#| message: false
+#| warning: false
+cps <- weeks_per_year2[weeks_per_year2$variable == "call_per_sick",]$n
+need <- weeks_per_year2[weeks_per_year2$variable == "sby_need",]$n
+
+p <- ggplot(data.frame(date = weeks_per_year2$contweek,
+                       dep_check = log(cps)/log(need)),
+            aes(x = date,
+                y = dep_check)) +
+  geom_line() + 
+  geom_smooth()
+
+ggplotly(p)
+```
+
+That doesn't look too bad. We do have reoccurring patterns and we have a small, almost linear trend on the smooth curve. Let's work with that too.
+
+## Over-all Conclusion:
+
+1.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
+2.  We possibly can use the call_per_sick feature as predictor regarding the logarithmic smooth curve on a weekly scale.
+3.  A linear regression based on smooth curves alone will probably not work out well. We still need to consider a strong weekly seasonality and a minor monthly seasonality.
+
+## Creating a baseline model
+
+### Facebook Prophet
+
+kurze beschreibung der vorteile von facebook prophet für das baseline modell und referenz
+
+### Caret Package
+
+Punkte bzw. workflow aus package beschreibung (ref)
+
+vorteile be verwendung des caret packages hinsichtlich hyperparameter eigener kosten funktion und modelvergleich
+
+```{r}
+# Bibliotheken
+library(caret)
+library(prophet)
+library(dbplyr)
+
+# Benutzerdefinierte Modellfunktion für Prophet
+train.prophet <- function(x, y, wts, param, lev, last) {
+  df <- cbind(x, y = y)
+  m <- prophet(df)
+  return(list(model = m))
+}
+
+predict.prophet <- function(modelFit, x) {
+  forecast <- predict(modelFit$model, x)
+  return(forecast$yhat)
+}
+
+# Dann kannst du Prophet als Methode in `train()` verwenden
+prophet_model <- train(
+  y ~ ., 
+  data = df, 
+  method = "prophet", 
+  trControl = trainControl(method = "cv", number = 5),
+  tuneGrid = expand.grid(changepoint_prior_scale = 0.1)
+)
+
+```
+
+### Cost function
+
+referenz use case
+
+```{undefined}
+
+```
+
+### Data preperation
+
+```{r}
+# reduce sickness data to date and target features (as needed for prophet)
+df <- sickness_csv %>% 
+  select(ds = date,
+         y = sby_need)
+  
+```
+
+### Cross validation
+
+-   `trainControl(method = "timeslice")` sorgt für Rolling-Origin-CV.
+
+-   `initialWindow = 150` bedeutet, dass die ersten 150 Tage fürs Training genutzt werden.
+
+-   `horizon = 10` bedeutet, dass das Modell jeweils 10 Tage in die Zukunft vorhersagt.
+
+-   `fixedWindow = FALSE` erlaubt ein sich erweiterndes Trainingsfenster.
+
+-   `caret::train()` trainiert das `prophet`-Modell unter Verwendung der Cross-Validation.
+
+```{r}
+# Parameter für Cross-Validation
+initial <- 70  # Größe des initialen Trainingssets
+horizon <- 10  # Vorhersagehorizont
+period <- 10   # Schrittweite für die Verschiebung des Trainingsfensters
+
+# Zeitbasierte Cross-Validation Splits mit caret
+time_slices <- caret::createTimeSlices(1:nrow(df), initialWindow = initial, horizon = horizon, fixedWindow = FALSE)
+
+# specific loss function
+lossfun <- function(actual, forecast) {
+  return(mean(abs((actual - forecast) / actual), na.rm = TRUE) * 100)
+}
+
+# Cross-Validation Setup mit der eigenen Loss-Funktion
+control <- trainControl(method = "cv", number = 5, 
+                        summaryFunction = custom_loss)
+
+# Prophet-Modell mit eigener Loss-Funktion und Cross-Validation
+prophet_model <- train(
+  y ~ ., 
+  data = df, 
+  method = "prophet", 
+  trControl = control,
+  tuneGrid = expand.grid(changepoint_prior_scale = 0.1)
+)
+
+
+
+```
+
+### Baseline 1: Facebook Prophet
+
+```{r}
+
+```
+
+### Baseline 2: ???
+
+```{r}
+
+
+
+
+
+
+  
+ 
+
+
+
+```
