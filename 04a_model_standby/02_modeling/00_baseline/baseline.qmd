@@ -1,45 +1,150 @@
 ---
-title: "Baseline Modelling and initial preasumptions"
+title: "Baseline Modelling"
 author: "Georg Grunsky"
 format: html
 editor: visual
+bibliography: references.bib
 ---
 
-## Preassumptions
+## Prämisse
 
-### Use Case Analysis
+### Use Case Analyse {#sec-use-case-analyse}
 
-#### Building Models
+In der vorausgegangenen Use Case Analyse[@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
 
-Dieser Platz auf dem MachineLearning Canvas bietet die Möglichkeit, Überlegungen zum Vorhersa- gemodell festzuhalten. Beim Beispiel DRK Berlin handelt es sich um ein Modell, das initial auf der Basis von etwa drei Jahren Zeitreihendaten aufgebaut ist, und Anfang jedes Monats mit neuen Daten erweitert wird. Dabei wird immer über den gesamten vorhandenen Daten-Zeitraum trainiert, da die Muster schließlich in saisonalen Schwankungen gefunden werden sollen. Es wird daher ein monatli- ches Training des Modells angestrebt. Eine zeitkritische Einschränkung für die erste produktionsreife Implementierung des Modells wurde bei dieser Entwicklung nicht vorgegeben. Eine erste Liste, in Frage kommender, Algorithmen für die gegenständliche Aufgabe wird nachfol- gend, auf Basis einer Konversation mit ChatGPT (2024) über Möglichkeiten und Vorzüge diverser MachineLearning Algorithmen zur Vorhersage in Zeitreihen, vorgeschlagen.
+In der UseCase Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
 
-• Long Short-Term Memory (LSTM) Netzwerke sind eine spezielle Art von rekurrenten neurona- len Netzwerken, die sich gut eignen, wenn Daten starke zeitliche Abhängigkeiten oder saisonale Muster aufweisen.
+**SARIMA** (Seasonal Autoregressive Integrated Moving Average) stellt dabei ein klassisches Modell für saisonale Zeitreihenanalysen dar. **Facebook Prophet** wurde ebenso für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
 
-• Facebook Prophet wurde speziell für Zeitreihenvorhersagen entwickelt, unterstützt automatisch verschiedene Saisonalitäten und ist robust gegen plötzliche Änderungen und fehlende Daten. Prophet erfordert weniger manuelle Anpassungen als neuronale Netze.
+Auf Basis des DRK-Reformtarifvertrags [@deutsches_rotes_kreuz_drk-reformtarifvertrag_2023] wurde geschätzt, dass ein Tag mit, bisher fix eingeteilten, 90 Bereitschaftsfahrer:innen etwa €14.850,- kostet (€165,- pro Bereitschaftsfahrer:in), die an vielen Tagen gar nicht abgerufen werden. Diese Kosten können gut als Messwerte in eine Kostenfunktion für die Güte des Modells integriert werden. Ein deutlich höherer Strafbetrag für eine zu niedrige Schätzung soll den Anforderungen des K.O.-Kriteriums entsprechen, nie zu wenig Bereitschaftspersonal vorzusehen.
 
-• Random Forest Regressor sind robust gegenüber Überanpassung und können komplexe nichtlineare Beziehungen in Daten erfassen. Sie sind jedoch nicht explizit für die Modellierung von zeitlichen Abhängigkeiten geschaffen.
+### Explorative Datenanalyse
 
-• Seasonal Autoregressive Integrated Moving Average (SARIMA) ist ein klassisches Modell für saisonale Zeitreihenanalysen. Das Modell ist gut interpretierbar und eignet sich vor allem für stark autoregressive Daten mit wenig externen Einflussgrößen
+Die Erkenntnisse der explorativen Datenanalyse bieten eine weitere Basis für die Erstellung eines Baseline Models und lassen sich wie folgt zusammenfassen:
 
-• XGBoost/LightGBM sind leistungsfähige Gradient Boosting-Algorithmen, die oft schneller und skalierbarer sind als neuronale Netze. Sie benötigen jedoch ein explizites Feature-Engineering um die Zeitkomponente der Daten zu modellieren.
+1.  Beim Bedarf an StandBy-Personal wurde über die Jahre ein positiver Trend mit einem starken Anstieg seit Beginn des Jahres 2019 beobachtet.
+2.  Ebenso wurde eine
+    1.  starke wochenweise Saisonalität mit Perioden zw. 3-5 Wochen,
+    2.  eine Abhängigkeit zum Tag im Monat mit einem starken Abwärtstrend zu Beginn jeden Monats und Periodenlängen von etwa drei Tagen,
+    3.  sowie eine schwächer ausgeprägte monatliche Saisonalität festgestellt.
+3.  Es wurde außerdem festgehalten, dass eine Abhängigkeit des Bedarfs an StandBy-Personal von der Anzahl krankgemeldeter Bereitschaftsfahrer:innen und der Anzahl eingehender Notrufe plausibel scheint. In der wochenweisen Aggregation der Daten bestätigte das neu entstandene Merkmal call_per_sick (eine Division der Anzahl der Notrufe durch die Anzahl der Krankmeldungen) diese Annahme. Dies wurde vor allem in der logarithmischen Darstellung der Daten ersichtlich.
 
-• Temporal Fusion Transformer (TFT) kann sowohl lange als auch kurze zeitliche Abhängigkeiten in Zeitreihendaten erfassen. TFT eignet sich gut für komplexe zeitliche Muster mit einer großen Anzahl von Features.
+Die möglichen Prediktoren aus dem letzten Punkt müssten für eine Verwendung als solche selbst erst einzeln vorhergesagt und danach zusammengeführt werden. Ein direktes Lernen der zeitlichen Muster der abhängigen Variable scheint an dieser Stelle für ein Baseline Model effizienter. Die ersten beiden Punkte weisen auf eine Kombination aus Trends und unterschiedlichen Saisonalitäten hin, die in einer Vorhersage berücksichtigt werden muss. Die Verwendung von dem oben beschriebenen Facebook Prophet Alorithmus für ein Baseline Model scheint den Anforderungen zu entsprechen.
 
-Die Vorteile hinsichtlich der Modellierung komplexer zeitlicher Muster überwiegen bei LSTM, TFT oder XGBoost/LightGBM, wo hingegen die Stärken von SARIMA und Prophet vor allem in der Interpretierbarkeit einfacher Zeitreihen liegen. In einer ersten Beurteilung scheint „Facebook Prophet“ den Anforderungen dieses UseCase gut entgegenzukommen. Dieser Algorithmus verwendet ein zusammengesetztes Modell, dessen drei Hauptkomponenten den allgemeinen Trend, die Saisonalität sowie Feiertage und spezielle Ereignisse in Zeitreihen berechnen (Taylor / Letham 2017, S.7). Bei Letzterer kann durch den Analysten selbst eine Liste mit vergangenen, aber auch zukünftigen, Ereignissen bereitgestellt werden (Taylor / Letham 2017, S.12). Außerdem ist die Implementierung in vorrangig verwendeten Programmiersprachen wie Python oder R einfach umzusetzen. An dieser Stelle der UseCase Analsyse ist es hilfreich, den Rahmen möglicher Vorhersagemodelle abzustecken um dem anschließenden Projektmanagement eine Grundlage für die Aufwandsabschät- zung der Implementierung zu bieten. Die eingehendere Beurteilung der Anwendbarkeit einzelner Algorithmen und auch der Vergleich und die Bewertung der gelieferten Ergebnisse verschiedener Modelle ist jedoch eine Aufgabe der Umsetzung des UseCase. Hier wird die endgültige Entscheidung über das verwendete Vorhersagemodell getroffen.
+## Baseline Model
 
-#### Impact Simulation
+### Framework
 
-Unter den Punkt „Impact Simulation“ fallen Überlegungen zur Bewertung des Vorhersagemodells vor einer Inbetriebnahme. In diesem Anwendungsfall werden, zum Beispiel, die tatsächlichen, täglichen Bereitschaftsfahrten des Test-Datensatzes mit der Vorhersage aus den Trainingsdaten verglichen. Die Performance wird gemessen an den Kosten, die für überschüssiges Bereitschaftspersonal angefallen wären, sowie am geschätzten Risiko und Aufwand zusätzliches Personal an jenen Tagen zu aktivieren, an denen die Berechnung eine zu geringe Bereitschaftsstärke vorhergesagt hätte. Nachdem ein man- gelnder Bereitschaftspersonaleinsatz unbedingt vermieden werden soll, werden letztere Metriken in den Tests auch höher bewertet. Eine monetäre Hinterlegung der geschätzten Kosten muss vermutlich aus dem Bereich des Risikomanagements bereitgestellt werden, eine überschlagene Schätzung für ei- ne erste Bewertung des Vorhersagemodells kann jedoch bereits anhand des DRK-Reformtarifvertrags erfolgen. Ein Kraftfahrer des Deutschen Rot Kreuz Rettungsdienstes (Entlohnungsgruppe 4) verdient in der niedrigsten Entgeltstufe C 2.767,69 brutto (Deutsches Rotes Kreuz 2023). Das entspricht, bei 20 Arbeitstagen, einem Stundenlohn von etwa C 18,- brutto. Bereitschaftsdienste werden nur zur Hälfte als Arbeitszeit berechnet, erhalten jedoch gemäß §13 des Reformtarifvertrages einen 25%igen Zuschlag. Ein zwölf Stunden Bereitschaftsdienst kostet also etwa C 135,- plus den Arbeitgeberanteil der Sozialangaben, der in Deutschland noch einmal zwischen 21% und 23% ausmacht. Das sind, für den Rettungsdienst, insgesamt geschätzte Kosten in der Höhe von C 165,- pro Bereitschaftsfahrer:in, wie bereits im Abschnitt Value Proposition (Punkt 3.2) angeführt. Bisher wurde der Einfachheit halber durchgehend ein Bereitschaftsdienst von 90 Bereitschaftsfahrenden vorgesehen. Das sind für den Rettungsdienst tägliche Kosten in der Höhe von C 14.850,-, die ggf. nicht abgerufen werden. Die Monatskosten für, vom Vorhersagemodell avisierte aber nicht abgerufene, Bereitschaftsfahrten können beim Testen der generierten Modelle als direkter Wert für den Vergleich der Güte herangezogen werden. Das Risiko der Unterbesetzung ist monetär schwer auszudrücken. Das ist aber auch nicht notwendig, da es sich hierbei nahezu um ein K.O. Kriterium handelt. Ein deutlich überhöhter Strafbetrag (zB C 500.000,-) für jeden Tag an dem zusätzliche Bereitschaftsfahrende aktiviert werden müssen trägt diesem Kriterium Rechnung. Die Modellgüte drückt sich schlussendlich als Minimierung der 12 zusammengesetzten Modellkosten aus. Die namentliche Belegung des Bereitschaftsplans erfolgt auch in Zukunft weiterhin durch Personal. Es gibt auf maschineller Seite daher keine Fairness constraints.
+Aufgrund der, oben angeführten, Prämissen wurde für die Erstellung des Baseline Models der **Facebook Prophet** Algorithmus in Kombination mit dem R Package **caret** [@kuhn_caret_nodate-1] gewählt. Letzteres ist als Framework und syntaktisch vereinheitlichte Sammlung von Funktionen für den Prozess der Modellgenerierung zu verstehen. Caret verfügt bereits vorab über viele integrierte Algorithmen, die im Rahmen des Trainings einfach ausgewählt werden können. Außerdem bietet die Dokumentation des caret Package eine gute Hilfestellung und Führung durch diesen Prozess.
 
-#### Monitoring
+Die angebotenen Funktionen umfassen dabei sämtliche Schritte von der Datenvorverarbeitung bis hin zu Modellevaluierung und bieten auch die Möglichkeit Hyperparameter zu testen, sowie benutzerdefinierte Modelle Kostenfunktionen zu integrieren.
 
-Dieser Bereich umfasst die Beschreibung von Metriken, die den Wert der Vorhersage und den Einfluss des MachineLearning UseCase auf die Planung der Bereitschaftsdienste quantifizieren. Die Arbeits- weise und der Erfolg des Systems kann, und soll, anhand dieser Metriken überwacht werden. Für das Monitoring des Modells werden an dieser Stelle jedoch nicht die geschäftszentrierten KPIs herange- zogen, die im Abschnitt 3.1.2 festgelegt wurden, sondern die KRIs, also die Key Result Indicators ausgewertet. Anhand dieser Messungen erkennt man rasch eine Verbesserung der jeweiligen Werte im Vergleich zu jener Zeit vor Einsatz des Modells. Die erarbeiteten KRIs waren:
+Facebook Prophet ist zwar, von Haus aus, nicht in caret integriert, scheint aber eine gute Wahl für ein Baseline Model dieses Anwendungsfalls zu sein. Es wird daher eine eigene Trainingsfunktion geschrieben und diese manuell in den caret workflow eingebettet. Die zeitliche Kreuzvalidierung von Facebook Prophet ist für diese Daten geeigneter als die caret-eigene *createTimeSlices*-Funktion und wird deshalb bereits in die Trainingsfunktion für Prophet mit aufgenommen.
 
-• Eine statistisch Aufbereitete Messung der „time-to-target“ , also der Zeit vom Anruf bis zum Eintreffen am Einsatzort bzw. der „no-shows“ , das sind Notrufe, die nicht bedient werden konnten. Natürlich hängen diese Werte von viel mehr Faktoren ab, als den verfügbaren Be- reitschaftsfahrer:innen. Die Vermeidung von Totalausfällen (no-shows) aufgrund mangelnden Bereitschaftspersonals wird aber eine wesentliche Ziffer für den Erfolg des Modells darstellen.
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
 
-• Die mittleren Personalkosten pro Notruf sollten mit einer akkuraten Planung der Bereitschaftsfah- renden merkbar abnehmen. Wenn man den o.a. Wert als K.O.-Kriterium für die Modellbewertung erachtet, so sagt dieser Wert (im Vergleich mit Vorangegangenen) aus, wie präzise das Modell arbeitet. Selbstverständlich können, in der ergebnisgetriebenen Entwicklung des Modells, noch weitere Metriken und Werte ausfindig gemacht werden, die eine erfolgreiche und effizienzfördernde Arbeit des Systems aussagekräftig überwachbar machen.
+# Bibliotheken
+library(caret, quietly = TRUE)
+library(prophet, quietly = TRUE)
+library(dbplyr, quietly = TRUE)
+library(ggplot2, quietly = TRUE)
+library(plotly, quietly = TRUE)
 
-## Reading the csv-file
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# prophet Trainingsfunktion für caret
+train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
+  df <- cbind(x, y = y)
+  m <- prophet(df)
+  
+  # cross-validation
+    cv_results <- cross_validation(m, 
+                                 initial = 365.25, 
+                                 period = 30, 
+                                 horizon = 30,
+                                 units = "days")
+    
+  # performance metrics
+  metrics <- performance_metrics(cv_results)
+  return(list(model = m, cv_results = cv_results, metrics = metrics))
+}
+
+
+# prophet Vorhersagefunktion für caret
+predict.prophet <- function(modelFit, x) {
+  forecast <- predict(modelFit$model, x)
+  return(forecast$yhat)
+}
+
+
+
+```
+
+```{r}
+# prophet-Methode in caret integrieren
+prophet <- list(
+  label = "Prophet",
+  library = "prophet",
+  check = NULL,
+  loop = NULL,
+  type = "Regression",
+  parameters = data.frame(
+    parameter = c("changepoint_prior_scale", 
+                  "seasonality_prior_scale", 
+                  "holidays_prior_scale"),
+    class = c("numeric", "numeric", "numeric"),
+    label = c("Changepoint Prior Scale", 
+              "Seasonality Prior Scale",
+              "Holidays Prior Scale")
+    ),
+  grid = function(x, y, len = NULL, search = NULL) {
+    expand.grid(changepoint_prior_scale = seq(0.001, 0.1, length = 10),
+                seasonality_prior_scale = seq(0.01, 10, length = 10),
+                holidays_prior_scale = seq(0.01, 10, length = 10))
+    },
+  fit = train.prophet,
+  predict = predict.prophet,
+  prob = NULL,
+  levels = NULL,
+  tags = c("Time Series"),
+  sort = NULL,
+  notes = "Integrate facebook prophet model into caret package."
+)
+```
+
+### Kostenfunktion
+
+Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedriege Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
+
+```{r}
+# Benutzerdefinierte Kostenfunktion
+lossfunction <- function(actual, forecast) {
+  
+  # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
+  stdbyloss <- sum(pmax(forecast - actual,0)) * 165
+  
+  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
+  penalty <- abs(sum(pmin(forecast - actual,0))) * 5000 
+  
+  # Summenbildung für Gesamtkosten
+  loss <- stdbyloss + penalty
+  
+  return(loss)
+}
+
+```
+
+### Pre-Processing {#sec-pre-processing}
+
+#### Reading the csv-file
 
 ```{r}
 #| echo: false
@@ -48,15 +153,80 @@ Dieser Bereich umfasst die Beschreibung von Metriken, die den Wert der Vorhersag
 require(readr)
 sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
     col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
-head(sickness_csv)
 ```
 
-The first plot shows, that n_duty has only three different values which are not affected by n_sick. We won't have influence on n_duty with our prediction model in the first run, so we can ignore that variable. It also shows that there seems to be no dependency between n_sick and calls. Still there are two ideas
+In diesem Fall ist keine aufwendige Vorverarbeitung der Daten notwendig. Prophet schreibt einen Datensatz vor, der die zeitliche Komponente (*ds*) und die Zeitreihendaten (*y*) abbildet.
 
-1.  We know from a previous analysis that n_sick and calls possibly have a similar value distribution (only by a factor of 100) but are not related to each other. Still it will be difficult to get these two variables on the same plot. Let's try to add a feature with divided calls by 100 to get them on the same scale.
-2.  It sounds logical, that the more sick personel the more reduced the ability to respond to emergency calls (even that n_duty was not related to n_sick). Probably it might be interesting to add another feature that shows calls per sick personnel to describe the mentioned ability to respond to emergencies. If there was a relation between those to, the average result would be around 100 (the factor), but fortunately there wasn't.
+```{r}
+# Datenreduktion gem. Prophet-Vorgaben
+df <- sickness_csv %>% 
+  select(ds = date,
+         y = sby_need)
+  
+```
 
-In the second figure, it seems even more clearly that the date has an influence on the other three variables. Let's therefore generate some more features out of the date variable to see if it is possible to be more specific about this fact. The shown figures analyse the three variables in comparison to the new features.
+### Data Splitting
+
+### Model Training and Tuning
+
+```{r}
+# check hyperparameter in package description
+
+# tune hyperparameter
+tune_grid <- expand.grid(changepoint_prior_scale = c(0.01, 0.1, 0.5), # the more trend-changes the higher the value
+                         seasonality_prior_scale = c(10, 50, 100), # stronger seasonaliy effect needs higher values
+                         holidays_prior_scale = c(10, 50))
+
+# cv and loss_fun used as traincontrol w/ caret
+control <- trainControl(method = "cv", number = 5, 
+                        summaryFunction = lossfunction)
+
+# Dann kannst du Prophet als Methode in `train()` verwenden
+prophet_model <- train(
+  y ~ ., 
+  data = df, 
+  method = prophet)
+#, 
+  #trControl = control,
+  #tuneGrid = tune_grid
+#)
+  
+m <- prophet_model$model  # Zugriff auf das beste Modell
+future <- make_future_dataframe(m, periods = 30)
+forecast <- predict(m, future)
+
+p1 <- plot(m, forecast)  # Plot der Vorhersage
+ggplotly(p1)
+
+p2 <- plot_cross_validation_metric(cv_results, metric = "rmse", rolling_window = 0.1)
+ggplotly(p2)
+
+p3 <- prophet_plot_components(m, forecast, uncertainty = TRUE, plot_cap = TRUE, weekly_start = 0, yearly_start = 0, render_plot = TRUE )
+
+```
+
+### Measuring Performance
+
+```{r}
+models <- list(
+  prophet = prophet_model,
+  xgboost = train(y ~ ., data = df, method = "xgbTree", trControl = control),
+  glm = train(y ~ ., data = df, method = "glm", trControl = control)
+)
+
+# Modellvergleich mit Resampling
+resamples(models) %>% summary()
+
+
+ #? hybride modelle mit prophet?
+  
+ 
+
+
+
+```
+
+## Old stuff
 
 ```{r}
 #| message: false
@@ -76,8 +246,6 @@ plot(sick[,c(3,5:8)])
 plot(sick[,c(10,4:8)])
 plot(sick[,c(2,7,9)])
 ```
-
-Regarding the figures all three variables in question are mostly affected by the month and the week features. Plus, there seems to be a slight dependency of the target variable sby_need the new calls_per_sick feature (the value range is similar, so we'll get them on one plot). Let's get into more detail on this.
 
 ```{r}
 #| message: false
@@ -118,10 +286,6 @@ ggplotly(p_month)
 
 ```
 
-It looks like, with call_per_sick, we found a promising predictor of the target variable, with almost parallel smooth curves. For the seasonality the week scale seems fine, the monthly analyse was rather a little to general. Interestingly in the week scale, one can see periodically reoccurring peaks every 4-5 weeks between week 5 and 44. For call_per_sick the peaks are not as clearly visible as for sby_need and do sometimes have an offset to the latter. On the monthly scale, those peaks disappear completely, but we do see some higher values especially in the months may and august.
-
-Lastly, see what it looks like if we a continuous weekly scale over the whole period. Possibly, there is a larger trend as well.
-
 ```{r}
 #| message: false
 #| warning: false
@@ -150,11 +314,6 @@ p_wpy <- ggplot(data = weeks_per_year) +
 ggplotly(p_wpy)
 
 ```
-
-The variable call_per_sick slightly decreases in the long trend but still seems to be a good predictor until start of 2019. By 2019 call_per_sick loses its predictive ability due to the rapid increase of sby_need. There are two ideas to possibly face that.
-
-1.  Add call100 to this figure to see if this feature could help
-2.  Try logarithmic scale, if we could flatten the sby_need trend, adding 1 to where sby_need == 0 for displaying logarithmic values.
 
 ```{r}
 #| message: false
@@ -188,13 +347,6 @@ p_wpy2 <- ggplot(data = weeks_per_year2) +
 ggplotly(p_wpy2)
 ```
 
-Conclusion:
-
-1.  calls100 doesn't help.
-2.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
-3.  The logarithmic scale seems to have a positive effect on the ability for call_per_sick to work as a predictor regarding the smooth curve. We could try to acknowledge that if we divide log(call_per_sick) by log(sby_need). The more flatten the line, the more dependency we have (see figure below).
-4.  A linear regression based on smooth curves will probably not work out well. We still need to consider a strong weekly seasonality and a minor monthly seasonality.
-
 ```{r}
 #| message: false
 #| warning: false
@@ -209,175 +361,4 @@ p <- ggplot(data.frame(date = weeks_per_year2$contweek,
   geom_smooth()
 
 ggplotly(p)
-```
-
-That doesn't look too bad. We do have reoccurring patterns and we have a small, almost linear trend on the smooth curve. Let's work with that too.
-
-## Over-all Conclusion:
-
-1.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
-2.  We possibly can use the call_per_sick feature as predictor regarding the logarithmic smooth curve on a weekly scale.
-3.  A linear regression based on smooth curves alone will probably not work out well. We still need to consider a strong weekly seasonality and a minor monthly seasonality.
-
-## Creating a baseline model
-
-### Facebook Prophet
-
-kurze beschreibung der vorteile von facebook prophet für das baseline modell und referenz
-
-### Caret Package
-
-Punkte bzw. workflow aus package beschreibung (ref)
-
-keine direkte integration von prohpet =\> eigene trainingsfunktion
-
-integration von prophet cv in trainingsfunktion, weil schlanker als caret-eigene createTimeSlices funktion
-
-vorteile be verwendung des caret packages hinsichtlich hyperparameter eigener kosten funktion und modelvergleich
-
-```{r}
-# Bibliotheken
-library(caret)
-library(prophet)
-library(dbplyr)
-library(plotly)
-
-# Benutzerdefinierte Modellfunktion für Prophet
-train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
-  df <- cbind(x, y = y)
-  m <- prophet(df)
-  
-  # Cross-Validation durchführen
-  cv_results <- cross_validation(m, 
-                                 initial = 365.25, 
-                                 period = 30, 
-                                 horizon = 30,
-                                 units = "days")
-  
-  # Evaluation der Performance (z.B. RMSE)
-  metrics <- performance_metrics(cv_results)
-  return(list(model = m, cv_results = cv_results, metrics = metrics))
-}
-
-
-predict.prophet <- function(modelFit, x) {
-  forecast <- predict(modelFit$model, x)
-  return(forecast$yhat)
-}
-
-
-
-```
-
-```{r}
-# Registriere die benutzerdefinierte Methode 'prophet' für caret
-prophet <- list(
-  label = "Prophet",
-  library = "prophet",
-  check = NULL,
-  loop = NULL,
-  type = "Regression",
-  parameters = data.frame(
-    parameter = c("changepoint_prior_scale", 
-                  "seasonality_prior_scale", 
-                  "holidays_prior_scale"),
-    class = c("numeric", "numeric", "numeric"),
-    label = c("Changepoint Prior Scale", 
-              "Seasonality Prior Scale",
-              "Holidays Prior Scale")
-    ),
-  grid = function(x, y, len = NULL, search = NULL) {
-    expand.grid(changepoint_prior_scale = seq(0.001, 0.1, length = 10),
-                seasonality_prior_scale = seq(0.01, 10, length = 10),
-                holidays_prior_scale = seq(0.01, 10, length = 10))
-    },
-  fit = train.prophet,
-  predict = predict.prophet,
-  prob = NULL,
-  levels = NULL,
-  tags = c("Time Series"),
-  sort = NULL,
-  notes = "Integrate facebook prophet model into caret package."
-)
-```
-
-### Cost function
-
-referenz use case
-
-```{r}
-# specific loss function
-lossfun <- function(actual, forecast) {
-  return(mean(abs((actual - forecast) / actual), na.rm = TRUE) * 100)
-}
-
-```
-
-### Data preperation
-
-```{r}
-# reduce sickness data to date and target features (as needed for prophet)
-df <- sickness_csv %>% 
-  select(ds = date,
-         y = sby_need)
-  
-```
-
-### Baseline 1: Facebook Prophet
-
-```{r}
-# check hyperparameter in package description
-
-# tune hyperparameter
-tune_grid <- expand.grid(changepoint_prior_scale = c(0.01, 0.1, 0.5), # the more trend-changes the higher the value
-                         seasonality_prior_scale = c(10, 50, 100), # stronger seasonaliy effect needs higher values
-                         holidays_prior_scale = c(10, 50))
-
-# cv and loss_fun used as traincontrol w/ caret
-control <- trainControl(method = "cv", number = 5, 
-                        summaryFunction = custom_loss)
-
-# Dann kannst du Prophet als Methode in `train()` verwenden
-prophet_model <- train(
-  y ~ ., 
-  data = df, 
-  method = prophet)
-#, 
-  #trControl = control,
-  #tuneGrid = tune_grid
-#)
-  
-m <- prophet_model$model  # Zugriff auf das beste Modell
-future <- make_future_dataframe(m, periods = 30)
-forecast <- predict(m, future)
-
-p1 <- plot(m, forecast)  # Plot der Vorhersage
-ggplotly(p1)
-
-p2 <- plot_cross_validation_metric(cv_results, metric = "rmse", rolling_window = 0.1)
-ggplotly(p2)
-
-p3 <- prophet_plot_components(m, forecast, uncertainty = TRUE, plot_cap = TRUE, weekly_start = 0, yearly_start = 0, render_plot = TRUE )
-
-```
-
-### Evaluierung (nach recherchieren)
-
-```{r}
-models <- list(
-  prophet = prophet_model,
-  xgboost = train(y ~ ., data = df, method = "xgbTree", trControl = control),
-  glm = train(y ~ ., data = df, method = "glm", trControl = control)
-)
-
-# Modellvergleich mit Resampling
-resamples(models) %>% summary()
-
-
- #? hybride modelle mit prophet?
-  
- 
-
-
-
 ```
