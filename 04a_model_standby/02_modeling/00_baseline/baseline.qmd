@@ -6,15 +6,34 @@ editor: visual
 bibliography: references.bib
 ---
 
+```{r}
+#| label: load packages
+#| message: false
+#| warning: false
+#| include: false
+
+library(fable)
+library(tsibble)
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(readr)
+library(plotly)
+library(forecast)
+library(feasts)
+```
+
 ## Prämisse
 
 ### Use Case Analyse {#sec-use-case-analyse}
 
-In der vorausgegangenen Use Case Analyse[@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
+In der vorausgegangenen Use Case Analyse [@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
 
-In der UseCase Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
+In der Use Case Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
 
 **SARIMA** (Seasonal Autoregressive Integrated Moving Average) stellt dabei ein klassisches Modell für saisonale Zeitreihenanalysen dar. **Facebook Prophet** wurde ebenso für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
+
+Eine weitere, sehr "schlanke", aber nicht so fein skalierbare Methode für die Vorhersage saisonaler Daten stellt **SNAIVE** (Seasonal Naive Model) dar. Dieser Algorithmus .... eignet sich daher für ein Baseline Model ...
 
 Auf Basis des DRK-Reformtarifvertrags [@deutsches_rotes_kreuz_drk-reformtarifvertrag_2023] wurde geschätzt, dass ein Tag mit, bisher fix eingeteilten, 90 Bereitschaftsfahrer:innen etwa €14.850,- kostet (€165,- pro Bereitschaftsfahrer:in), die an vielen Tagen gar nicht abgerufen werden. Diese Kosten können gut als Messwerte in eine Kostenfunktion für die Güte des Modells integriert werden. Ein deutlich höherer Strafbetrag für eine zu niedrige Schätzung soll den Anforderungen des K.O.-Kriteriums entsprechen, nie zu wenig Bereitschaftspersonal vorzusehen.
 
@@ -31,114 +50,64 @@ Die Erkenntnisse der explorativen Datenanalyse bieten eine weitere Basis für di
 
 Die möglichen Prediktoren aus dem letzten Punkt müssten für eine Verwendung als solche selbst erst einzeln vorhergesagt und danach zusammengeführt werden. Ein direktes Lernen der zeitlichen Muster der abhängigen Variable scheint an dieser Stelle für ein Baseline Model effizienter. Die ersten beiden Punkte weisen auf eine Kombination aus Trends und unterschiedlichen Saisonalitäten hin, die in einer Vorhersage berücksichtigt werden muss. Die Verwendung von dem oben beschriebenen Facebook Prophet Alorithmus für ein Baseline Model scheint den Anforderungen zu entsprechen.
 
-## Baseline Model
+## Baseline Model mit SNAIVE
 
-### Framework
-
-Aufgrund der, oben angeführten, Prämissen wurde für die Erstellung des Baseline Models der **Facebook Prophet** Algorithmus in Kombination mit dem R Package **caret** [@kuhn_caret_nodate-1] gewählt. Letzteres ist als Framework und syntaktisch vereinheitlichte Sammlung von Funktionen für den Prozess der Modellgenerierung zu verstehen. Caret verfügt bereits vorab über viele integrierte Algorithmen, die im Rahmen des Trainings einfach ausgewählt werden können. Außerdem bietet die Dokumentation des caret Package eine gute Hilfestellung und Führung durch diesen Prozess.
-
-Die angebotenen Funktionen umfassen dabei sämtliche Schritte von der Datenvorverarbeitung bis hin zu Modellevaluierung und bieten auch die Möglichkeit Hyperparameter zu testen, sowie benutzerdefinierte Modelle Kostenfunktionen zu integrieren.
-
-Facebook Prophet ist zwar, von Haus aus, nicht in caret integriert, scheint aber eine gute Wahl für ein Baseline Model dieses Anwendungsfalls zu sein. Es wird daher eine eigene Trainingsfunktion geschrieben und diese manuell in den caret workflow eingebettet. Die zeitliche Kreuzvalidierung von Facebook Prophet ist für diese Daten geeigneter als die caret-eigene *createTimeSlices*-Funktion und wird deshalb bereits in die Trainingsfunktion für Prophet mit aufgenommen.
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-# Bibliotheken
-library(caret, quietly = TRUE)
-library(prophet, quietly = TRUE)
-library(dbplyr, quietly = TRUE)
-library(ggplot2, quietly = TRUE)
-library(plotly, quietly = TRUE)
-
-```
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-# prophet Trainingsfunktion für caret
-train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
-  df <- cbind(x, y = y)
-  m <- prophet(df)
-  
-  # cross-validation
-    cv_results <- cross_validation(m, 
-                                 initial = 365.25, 
-                                 period = 30, 
-                                 horizon = 30,
-                                 units = "days")
-    
-  # performance metrics
-  metrics <- performance_metrics(cv_results)
-  return(list(model = m, cv_results = cv_results, metrics = metrics))
-}
-
-
-# prophet Vorhersagefunktion für caret
-predict.prophet <- function(modelFit, x) {
-  forecast <- predict(modelFit$model, x)
-  return(forecast$yhat)
-}
-
-
-
-```
-
-```{r}
-# prophet-Methode in caret integrieren
-prophet <- list(
-  label = "Prophet",
-  library = "prophet",
-  check = NULL,
-  loop = NULL,
-  type = "Regression",
-  parameters = data.frame(
-    parameter = c("changepoint_prior_scale", 
-                  "seasonality_prior_scale", 
-                  "holidays_prior_scale"),
-    class = c("numeric", "numeric", "numeric"),
-    label = c("Changepoint Prior Scale", 
-              "Seasonality Prior Scale",
-              "Holidays Prior Scale")
-    ),
-  grid = function(x, y, len = NULL, search = NULL) {
-    expand.grid(changepoint_prior_scale = seq(0.001, 0.1, length = 10),
-                seasonality_prior_scale = seq(0.01, 10, length = 10),
-                holidays_prior_scale = seq(0.01, 10, length = 10))
-    },
-  fit = train.prophet,
-  predict = predict.prophet,
-  prob = NULL,
-  levels = NULL,
-  tags = c("Time Series"),
-  sort = NULL,
-  notes = "Integrate facebook prophet model into caret package."
-)
-```
+SNAIVE und fable
 
 ### Kostenfunktion
 
-Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedriege Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
+Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedrige Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
 
 ```{r}
-# Benutzerdefinierte Kostenfunktion
-lossfunction <- function(actual, forecast) {
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+lossfunction <- function(obs, pred, type = sum) {
+  
+  resid <- obs - pred
+  assign("method",type)
   
   # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
-  stdbyloss <- sum(pmax(forecast - actual,0)) * 165
+  stdbyloss <- get("method")(pmax(-resid,0)) * 165
   
   # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
-  penalty <- abs(sum(pmin(forecast - actual,0))) * 5000 
+  penalty <- get("method")(pmax(resid,0)) * 5000 
   
   # Summenbildung für Gesamtkosten
   loss <- stdbyloss + penalty
   
   return(loss)
 }
+
+
+# Für den Vergleich von Kosten über einen längeren Zeitraum
+# kann mitdieser Funktion die Lesbarkeit erhöht werden.
+
+errorcalc <- function(type, nums) {
+  
+  assign("method",type)
+  round(get("method")(nums)/1000,0)*1000
+  
+}
+```
+
+Im bisherigen Bereitschaftssystem wurden täglich fix 90 StandBy-Fahrer:innen vorgehalten. Nach der obigen Kostfunktion wären hierdurch, für den Zeitraum 2019-05-01 bis 2019-05-31 unten angeführte Kosten entstanden. Diese können zu einem späteren Zeitpunkt einen Vergleichswert liefern.
+
+```{r}
+
+# Testzeitraum
+teststart <- "2019-05-01"
+testend <- "2019-05-31"
+
+# Kostenfunktion über Testzeitraum mit aufsummierten Kosten
+lossfunction(obs = data[between(data$date,
+                                as.Date(teststart),
+                                as.Date(testend)),]$value,
+             pred = 90,
+             type = sum)
 
 ```
 
@@ -147,218 +116,177 @@ lossfunction <- function(actual, forecast) {
 #### Reading the csv-file
 
 ```{r}
-#| echo: false
+#| eval: true
+#| echo: true
 #| message: false
 #| warning: false
-require(readr)
-sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
+#| include: false
+
+sickness_csv <- read_csv(paste0(wd,"/01_data/01_lake/01_use_case_2/sickness_table.csv"), 
     col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
-```
 
-In diesem Fall ist keine aufwendige Vorverarbeitung der Daten notwendig. Prophet schreibt einen Datensatz vor, der die zeitliche Komponente (*ds*) und die Zeitreihendaten (*y*) abbildet.
+sickness_csv$date <- as.Date(sickness_csv$date)
+sickness_csv$value <- log(sickness_csv$sby_need + 1)
 
-```{r}
-# Datenreduktion gem. Prophet-Vorgaben
-df <- sickness_csv %>% 
-  select(ds = date,
-         y = sby_need)
-  
+# tsibble für fable erstellen
+data <- sickness_csv %>% 
+  select(date, value) %>%
+  as_tsibble(index = date)
 ```
 
 ### Data Splitting
 
-### Model Training and Tuning
+Data Splitting / Kreuzvalidierung in Zeitreihen blabla wie funktionierts
 
 ```{r}
-# check hyperparameter in package description
+# Kreuzvalidierung
+cv <- data %>%
+  slide_tsibble(.size = 180, .step = 60)
+```
 
-# tune hyperparameter
-tune_grid <- expand.grid(changepoint_prior_scale = c(0.01, 0.1, 0.5), # the more trend-changes the higher the value
-                         seasonality_prior_scale = c(10, 50, 100), # stronger seasonaliy effect needs higher values
-                         holidays_prior_scale = c(10, 50))
+### Model Training
 
-# cv and loss_fun used as traincontrol w/ caret
-control <- trainControl(method = "cv", number = 5, 
-                        summaryFunction = lossfunction)
+#### fable
 
-# Dann kannst du Prophet als Methode in `train()` verwenden
-prophet_model <- train(
-  y ~ ., 
-  data = df, 
-  method = prophet)
-#, 
-  #trControl = control,
-  #tuneGrid = tune_grid
-#)
-  
-m <- prophet_model$model  # Zugriff auf das beste Modell
-future <- make_future_dataframe(m, periods = 30)
-forecast <- predict(m, future)
+```{r}
 
-p1 <- plot(m, forecast)  # Plot der Vorhersage
-ggplotly(p1)
+# Training
+progressr::with_progress(
+  model <- cv %>%
+    model(snaive = SNAIVE(value),
+          naive = NAIVE(value),
+          mean = MEAN(value),
+          drift = RW(value),
+          ma = ARIMA(value ~ pdq(0, 0, 2)),
+          # ets_add = ETS(value ~ error("A") + trend("A") + season("A")),
+          ets = ETS(value)) 
+)
 
-p2 <- plot_cross_validation_metric(cv_results, metric = "rmse", rolling_window = 0.1)
-ggplotly(p2)
+# paralleles trainieren mit future-package wäre möglich
+```
 
-p3 <- prophet_plot_components(m, forecast, uncertainty = TRUE, plot_cap = TRUE, weekly_start = 0, yearly_start = 0, render_plot = TRUE )
+```{r}
+#| eval: false
+#| include: false
+
+# forecast (MA) 
+
+# Beispiel-Zeitreihe
+tsdata <- as.ts(data,
+                start = c(2016,4,1),
+                end = c(2019,5,27), 
+                frequency = 1)
+
+
+# Rolling Average (z.B. 7-Tage-Fenster)
+ma_fc <- ma(tsdata, order = 60)
+
+# Visualisierung
+autoplot(tsdata) +
+  autolayer(ma_fc, series = "Moving Average", color = "red")
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+#forecast (snaive)
+
+# Seasonal Naive Model
+snaive_m <- snaive(tsdata)
+
+# Vorhersage
+snaive_fc <- forecast(snaive_m)
+
+# Visualisierung
+autoplot(tsdata) +
+  autolayer(snaive_fc, series = "SNAIVE", color = "red")
+
+```
+
+### Prediction
+
+```{r}
+
+# Vorhersage
+fc <- model %>%
+  forecast(h = "60 days", level = 80)
 
 ```
 
 ### Measuring Performance
 
 ```{r}
-models <- list(
-  prophet = prophet_model,
-  xgboost = train(y ~ ., data = df, method = "xgbTree", trControl = control),
-  glm = train(y ~ ., data = df, method = "glm", trControl = control)
-)
-
-# Modellvergleich mit Resampling
-resamples(models) %>% summary()
 
 
- #? hybride modelle mit prophet?
-  
- 
+## Anwendung der eigenen Kostenfunktion auf alle Modelle
+lev = 80
+eval <- data.frame(id = fc$.id,
+                   model = fc$.model,
+                   date = fc$date,
+                   dist = fc$value,
+                   predicted = fc$.mean)
+# unlist(eval$dist[1])
+# pmax(unlist(distributional::hdr(eval$dist[1])),0)
+
+eval <- eval %>% rowwise %>% 
+  mutate(lower = pmax(unlist(distributional::hdr(dist,lev)),0)[1],
+         upper = pmax(unlist(distributional::hdr(dist,lev)),0)[2],
+         level = pmax(unlist(distributional::hdr(dist,lev)),0)[3])
+
+# head(exp(eval$upper))
+
+singlecosts <- eval %>% 
+  # mutate(model_id = paste0(model, "_", id, collapse = "")) %>%
+  select(model, id, date, predicted, lower, upper) %>%
+  left_join(data, by = "date") %>%
+  mutate(dailycost = lossfunction(obs = exp(value), pred = exp(predicted)),
+         dailyupper = lossfunction(obs = exp(value), pred = exp(upper)))
 
 
 
+compare_models <- singlecosts %>% group_by(model) %>%
+  summarise(maxerror = errorcalc(max, na.omit(dailycost)),
+            meanerror = errorcalc(mean, na.omit(dailycost)),
+            medianerror = errorcalc(median,na.omit(dailycost)),
+            maxupper = errorcalc(max,na.omit(dailyupper)),
+            meanupper = errorcalc(mean,na.omit(dailyupper)),
+            medianupper = errorcalc(median,na.omit(dailyupper)))
+
+compare_model_id <- singlecosts %>% group_by(model, id) %>%
+  summarise(timerange = paste0(range(date), collapse = "-"),
+            summederror = errorcalc(sum, na.omit(dailycost)),
+            meanerror = errorcalc(mean, na.omit(dailycost)),
+            medianerror = errorcalc(median,na.omit(dailycost)),
+            summedupper = errorcalc(sum,na.omit(dailyupper)),
+            meanupper = errorcalc(mean,na.omit(dailyupper)),
+            medianupper = errorcalc(median,na.omit(dailyupper)))
+
+compare_multimodel_id <- singlecosts %>% group_by(id) %>%
+  summarise(timerange = paste0(range(date), collapse = "-"),
+            maxerror = errorcalc(max, na.omit(dailycost)),
+            meanerror = errorcalc(mean, na.omit(dailycost)),
+            medianerror = errorcalc(median,na.omit(dailycost)),
+            maxupper = errorcalc(max,na.omit(dailyupper)),
+            meanupper = errorcalc(mean,na.omit(dailyupper)),
+            medianupper = errorcalc(median,na.omit(dailyupper)))
 ```
 
-## Old stuff
+eigentlich geht nur ein mittelmaß wegen der überschneidenden zeitbereiche oder verwendung mehrerer models, deswegen wird wo nötig max() verwendet.
+
+## **1. `autoplot()` – Funktion und Interpretation**
 
 ```{r}
-#| message: false
-#| warning: false
-require(lubridate, quietly = T)
-require(dbplyr, quietly = T)
-sick <- sickness_csv[,c(2:4,7)]
-sick <- sick %>% dplyr::mutate(year = lubridate::year(date),
-                        month = lubridate::month(date),
-                        week = lubridate::week(date),
-                        wday = lubridate::wday(date),
-                        calls100 = calls/100,
-                        call_per_sick = calls/n_sick)
-plot(sick[,c(4:8)])
-plot(sick[,c(2,5:8)])
-plot(sick[,c(3,5:8)])
-plot(sick[,c(10,4:8)])
-plot(sick[,c(2,7,9)])
-```
 
-```{r}
-#| message: false
-#| warning: false
-require(ggplot2, quietly = T)
-require(plotly, quietly = T)
-require(data.table, quietly = T)
-require(reshape2, quietly = T)
-
-# reshape tables
-week <- reshape2::melt(sick[,c(4,7,9,10)], id.vars = "week") %>% 
-  dplyr::group_by(week, variable) %>%
-  dplyr::summarise(n = sum(value))
-
-month <- reshape2::melt(sick[,c(4,6,9,10)], id.vars = "month") %>% 
-  dplyr::group_by(month, variable) %>%
-  dplyr::summarise(n = sum(value))
-
-weekday <- reshape2::melt(sick[,c(4,8,10)], id.vars = "wday") %>% 
-  dplyr::group_by(wday, variable) %>%
-  dplyr::summarise(n = sum(value))
-
-p_weekday <- ggplot(data = weekday) +
-  geom_line(aes(x = wday, y = n, colour = variable)) +
-  geom_smooth(aes(x = wday, y = n, colour = variable))
-
-p_week <- ggplot(data = week) +
-  geom_line(aes(x = week, y = n, colour = variable)) +
-  geom_smooth(aes(x = week, y = n, colour = variable))
-
-p_month <- ggplot(data = month) +
-  geom_line(aes(x = month, y = n, colour = variable)) +
-  geom_smooth(aes(x = month, y = n, colour = variable))
-
-
-ggplotly(p_week)
-ggplotly(p_month)
-
-```
-
-```{r}
-#| message: false
-#| warning: false
-weeks_per_year <- reshape2::melt(sick[,c(4,5,7,10)],
-                                 id.vars = c("year","week")) %>%
-  dplyr::group_by(year, week, variable) %>%
-  dplyr::summarise(n = sum(value)) %>%
-  dplyr::mutate(contweek = year + week/52)
-  
-  
-
-p_wpy <- ggplot(data = weeks_per_year) +
-  geom_line(aes(x = contweek, 
-                # x = week,
-                y = n,
-                colour = variable)) +
-                # colour = as.factor(paste0(variable,year)), 
-                # group = year)) +
-  geom_smooth(aes(x = contweek, 
-                  # x = week,
-                  y = n, 
-                  colour = variable))
-                  # colour = as.factor(paste0(variable,year)), 
-                  # group = year))
-
-ggplotly(p_wpy)
-
-```
-
-```{r}
-#| message: false
-#| warning: false
-weeks_per_year2 <- reshape2::melt(sick[,c(4,5,7,9,10)],
-                                 id.vars = c("year","week")) %>%
-  dplyr::group_by(year, week, variable) %>%
-  dplyr::summarise(n = sum(value)) %>%
-  dplyr::mutate(contweek = year + week/52)
-  
-# add 10 to sby_need == 0 to avoid log(0)
-weeks_per_year2[(weeks_per_year2$variable == "sby_need" & 
-                 weeks_per_year2$n == 0), "n"] <- 1
-
-p_wpy2 <- ggplot(data = weeks_per_year2) +
-  geom_line(aes(x = contweek, 
-                # x = week,
-                # y = n,
-                y = log(n),
-                colour = variable)) +
-                # colour = as.factor(paste0(variable,year)), 
-                # group = year)) +
-  geom_smooth(aes(x = contweek, 
-                  # x = week,
-                  # y = n, 
-                  y = log(n), 
-                  colour = variable))
-                  # colour = as.factor(paste0(variable,year)), 
-                  # group = year))
-
-ggplotly(p_wpy2)
-```
-
-```{r}
-#| message: false
-#| warning: false
-cps <- weeks_per_year2[weeks_per_year2$variable == "call_per_sick",]$n
-need <- weeks_per_year2[weeks_per_year2$variable == "sby_need",]$n
-
-p <- ggplot(data.frame(date = weeks_per_year2$contweek,
-                       dep_check = log(cps)/log(need)),
-            aes(x = date,
-                y = dep_check)) +
-  geom_line() + 
-  geom_smooth()
+# Visualisierung von Modell + Vorhersage
+p <- autoplot(data) +
+  autolayer(fc, level = 80, alpha = 0.4) +
+  labs(title = "Prognose der nächsten 60 Tage",
+       y = "Wert",
+       x = "Datum")
 
 ggplotly(p)
 ```
+
+vignette("transformations", package = "fable")

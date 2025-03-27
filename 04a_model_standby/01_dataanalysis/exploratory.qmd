@@ -346,6 +346,73 @@ ggplotly(p)
 
 That doesn't look too bad. We do have reoccurring patterns and we have a small, almost linear trend on the smooth curve. Let's work with that too.
 
+## Werteverteilung der Zielvariable
+
+Die Verteilung der Zielvariablen auf Tagesbasis, also nicht in aggregierter Form, soll schlussendlich noch Auschluss, bzw. einen Überblick über die zu erwartenden Werte liefern.
+
+```{r}
+hist <- ggplot(data = sickness_csv, 
+               aes(x = sby_need, fill = as.factor(year(date)))) +
+  geom_histogram(binwidth = 10, position = "dodge") 
+ggplotly(hist)
+
+```
+
+erkannt: Masse bei den Werte 0-10
+
+kleine Gruppe an Werten von 418 bis 456 aus jedem Jahr =\> selber Tag? jährliche Veranstaltung?
+
+```{r}
+sickness_csv[between(sickness_csv$sby_need,418,456),]$date
+```
+
+nicht bewahrheitet
+
+? Quantillen als mögliche Anhaltepunkte für einen fixen "Sicherheitspolster" in der Vorhersage
+
+```{r}
+
+
+
+dens <- ggplot(data = sickness_csv, 
+               aes(x = sby_need, fill = as.factor(year(date)))) +
+  geom_density()
+ggplotly(dens)
+
+summary(sickness_csv$sby_need)
+
+sum(table(sickness_csv[sickness_csv$sby_need <= 10,]$sby_need))/1152
+
+
+quantile(sickness_csv$sby_need, probs = c(0.95, 0.90, 0.85, 0.8, 0.68))
+```
+
+Quantillen 68% und 75% 80% und 85%, wenige aber starke Ausreißer =\> logarithmische Skalierung um die Werte besser zu verteilen.
+
+```{r}
+
+sickness_csv$logscale <- log(sickness_csv$sby_need + 1)
+
+dens <- ggplot(data = sickness_csv, 
+               aes(x = logscale, fill = as.factor(year(date)))) +
+  geom_density()
+ggplotly(dens)
+
+summary(sickness_csv$logscale)
+
+quantile(sickness_csv$logscale, probs = c(0.95, 0.90, 0.85, 0.8, 0.75, 0.68))
+
+
+```
+
+besser erkennbar in Grafik und "schöner" verteilt. Beschreibung der Grafik
+
+die Jahre 2016 und 2017 sind nahezu gleich, Änderungen vor allem in 2018 und im ersten Drittel 2019. Dennoch in allen Jahren eine mehr oder weniger ausgprägte "zweite Erhebung" zw. den Werten 4 und 6 erkennbar.
+
+Selbst wenn 50 als Fixwert mit Sicherheitsreserve (statt 0-Vorhersagen) gewählt wird, können täglich immer noch (90 - 50) \* 165 Euro (€6.600,-), nur anhand der explorativen Datenanalyse, eingespart werden und man hätte mit 80% Wahrscheinlichkeit immer noch genug StandBy-Personal. Wenn der Vorhersage-Algorithmus die restlichen 20% Ausreißer "findet", ist das Ziel erreicht.
+
+Algorithmen werden vermutlich mit log-Werten besser umgehen können, weil sich Ausreißer weniger Stark auswirken.
+
 ## Over-all Conclusion:
 
 1.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
