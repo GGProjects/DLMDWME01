@@ -1,4 +1,5 @@
 ---
++---
 title: "Baseline Modelling"
 author: "Georg Grunsky"
 format: html
@@ -21,6 +22,8 @@ library(readr)
 library(plotly)
 library(forecast)
 library(feasts)
+require(fpp3)
+require(ggplot2)
 ```
 
 ## Prämisse
@@ -73,8 +76,10 @@ lossfunction <- function(obs, pred, type = sum) {
   # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
   stdbyloss <- get("method")(pmax(-resid,0)) * 165
   
-  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
-  penalty <- get("method")(pmax(resid,0)) * 5000 
+  # Deutlich höherer Strafbetrag für zu niedrige Schätzung (unabhängig der Anzahl). 
+  ifelse(get("method")(pmax(resid,0)) > 0, 
+         penalty <- 1000000,
+         penalty <- 0)
   
   # Summenbildung für Gesamtkosten
   loss <- stdbyloss + penalty
@@ -94,23 +99,6 @@ errorcalc <- function(type, nums) {
 }
 ```
 
-Im bisherigen Bereitschaftssystem wurden täglich fix 90 StandBy-Fahrer:innen vorgehalten. Nach der obigen Kostfunktion wären hierdurch, für den Zeitraum 2019-05-01 bis 2019-05-31 unten angeführte Kosten entstanden. Diese können zu einem späteren Zeitpunkt einen Vergleichswert liefern.
-
-```{r}
-
-# Testzeitraum
-teststart <- "2019-05-01"
-testend <- "2019-05-31"
-
-# Kostenfunktion über Testzeitraum mit aufsummierten Kosten
-lossfunction(obs = data[between(data$date,
-                                as.Date(teststart),
-                                as.Date(testend)),]$value,
-             pred = 90,
-             type = sum)
-
-```
-
 ### Pre-Processing {#sec-pre-processing}
 
 #### Reading the csv-file
@@ -126,12 +114,41 @@ sickness_csv <- read_csv(paste0(wd,"/01_data/01_lake/01_use_case_2/sickness_tabl
     col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
 
 sickness_csv$date <- as.Date(sickness_csv$date)
-sickness_csv$value <- log(sickness_csv$sby_need + 1)
+sickness_csv$value  <- log(sickness_csv$sby_need + 1)
 
-# tsibble für fable erstellen
+# tageweisen tsibble erstellen mit logarithmischen Daten 
 data <- sickness_csv %>% 
   select(date, value) %>%
   as_tsibble(index = date)
+
+# wochenweise nach "max" aggregierten tsibble erstellen
+ts_week <- sickness_csv %>%
+  mutate(week = yearweek(date)) %>%
+  select(week, sby_need) %>%
+  reshape2::melt(id.vars = "week") %>%
+  group_by(week) %>%
+  summarise(max_value = max(value)) %>%
+  mutate(log_value = log(max_value + 1)) %>%
+  as_tsibble(index = week)
+```
+
+Im bisherigen Bereitschaftssystem wurden täglich fix 90 StandBy-Fahrer:innen vorgehalten. Nach der obigen Kostfunktion wären hierdurch, für den, im Code angeführten, Testzeitraum Kosten in der Höhe der Codeausgabe entstanden. Diese können zu einem späteren Zeitpunkt einen Vergleichswert liefern.
+
+```{r}
+
+# Testzeitraum
+teststart <- "2019-02-01"
+testend <- "2019-05-31"
+
+# Kostenfunktion über Testzeitraum mit aufsummierten Kosten
+lossfunction(obs = data[between(data$date,
+                                as.Date(teststart),
+                                as.Date(testend)),]$value,
+             pred = log(90),
+             type = sum)
+
+
+
 ```
 
 ### Data Splitting
@@ -141,7 +158,7 @@ Data Splitting / Kreuzvalidierung in Zeitreihen blabla wie funktionierts
 ```{r}
 # Kreuzvalidierung
 cv <- data %>%
-  slide_tsibble(.size = 180, .step = 60)
+  slide_tsibble(.size = 360, .step = 60)
 ```
 
 ### Model Training
@@ -151,57 +168,18 @@ cv <- data %>%
 ```{r}
 
 # Training
-progressr::with_progress(
-  model <- cv %>%
-    model(snaive = SNAIVE(value),
-          naive = NAIVE(value),
-          mean = MEAN(value),
-          drift = RW(value),
-          ma = ARIMA(value ~ pdq(0, 0, 2)),
-          # ets_add = ETS(value ~ error("A") + trend("A") + season("A")),
-          ets = ETS(value)) 
+system.time(
+  progressr::with_progress(
+    model <- cv %>%
+      model(snaive = SNAIVE(value),
+            naive = NAIVE(value),
+            mean = MEAN(value),
+            drift = RW(value),
+            ma = ARIMA(value ~ pdq(0, 0, 2)),
+            ets_season = ETS(value ~ error("A") + trend("A") + season("A")),
+            ets = ETS(value)) 
+    )
 )
-
-# paralleles trainieren mit future-package wäre möglich
-```
-
-```{r}
-#| eval: false
-#| include: false
-
-# forecast (MA) 
-
-# Beispiel-Zeitreihe
-tsdata <- as.ts(data,
-                start = c(2016,4,1),
-                end = c(2019,5,27), 
-                frequency = 1)
-
-
-# Rolling Average (z.B. 7-Tage-Fenster)
-ma_fc <- ma(tsdata, order = 60)
-
-# Visualisierung
-autoplot(tsdata) +
-  autolayer(ma_fc, series = "Moving Average", color = "red")
-
-```
-
-```{r}
-#| eval: false
-#| include: false
-
-#forecast (snaive)
-
-# Seasonal Naive Model
-snaive_m <- snaive(tsdata)
-
-# Vorhersage
-snaive_fc <- forecast(snaive_m)
-
-# Visualisierung
-autoplot(tsdata) +
-  autolayer(snaive_fc, series = "SNAIVE", color = "red")
 
 ```
 
@@ -211,7 +189,7 @@ autoplot(tsdata) +
 
 # Vorhersage
 fc <- model %>%
-  forecast(h = "60 days", level = 80)
+  forecast(h = "60 days" )
 
 ```
 
@@ -220,60 +198,53 @@ fc <- model %>%
 ```{r}
 
 
-## Anwendung der eigenen Kostenfunktion auf alle Modelle
-lev = 80
+# setzen des zu kalkulierenden Konfidenzlevels
+lev = 95
+
+# zusammenbauen eines auswertbaren Datensatzes
 eval <- data.frame(id = fc$.id,
                    model = fc$.model,
                    date = fc$date,
-                   dist = fc$value,
-                   predicted = fc$.mean)
-# unlist(eval$dist[1])
-# pmax(unlist(distributional::hdr(eval$dist[1])),0)
+                   dist = fc$value, # Wahrscheinlichkeitsverteilung
+                   predicted = fc$.mean) %>%
+  filter(date <= as.Date("2019-05-27"))
 
+# Erweiterung um die Schätzungen der Konfidenzintervalle der Wahrscheinlichkeitsverteilungen
 eval <- eval %>% rowwise %>% 
   mutate(lower = pmax(unlist(distributional::hdr(dist,lev)),0)[1],
          upper = pmax(unlist(distributional::hdr(dist,lev)),0)[2],
          level = pmax(unlist(distributional::hdr(dist,lev)),0)[3])
 
-# head(exp(eval$upper))
-
+# Anwendung der Kostenfunktion auf den Punktschätzer und die Obergrenze des Konfidenzintervalles für jeden Schätzwert
 singlecosts <- eval %>% 
-  # mutate(model_id = paste0(model, "_", id, collapse = "")) %>%
   select(model, id, date, predicted, lower, upper) %>%
   left_join(data, by = "date") %>%
   mutate(dailycost = lossfunction(obs = exp(value), pred = exp(predicted)),
          dailyupper = lossfunction(obs = exp(value), pred = exp(upper)))
 
+```
+
+eigentlich geht nur ein mittelmaß wegen der überschneidenden zeitbereiche oder verwendung mehrerer models, deswegen wird wo nötig max() verwendet.
+
+Um die Kostenfunktion anzuwenden müssen die Vorhersagen auf den Zeitraum der vorhandenen Vergleichsdaten gekürzt werden.
+
+#### Vergleich der Modelle
+
+```{r}
 
 
 compare_models <- singlecosts %>% group_by(model) %>%
   summarise(maxerror = errorcalc(max, na.omit(dailycost)),
             meanerror = errorcalc(mean, na.omit(dailycost)),
             medianerror = errorcalc(median,na.omit(dailycost)),
-            maxupper = errorcalc(max,na.omit(dailyupper)),
-            meanupper = errorcalc(mean,na.omit(dailyupper)),
-            medianupper = errorcalc(median,na.omit(dailyupper)))
+            # maxupper = errorcalc(max,na.omit(dailyupper)),
+            # meanupper = errorcalc(mean,na.omit(dailyupper)),
+            # medianupper = errorcalc(median,na.omit(dailyupper)),
+            n_high = sum(na.omit(
+              dailycost)[na.omit(dailycost) == 1000000])/1000000)
 
-compare_model_id <- singlecosts %>% group_by(model, id) %>%
-  summarise(timerange = paste0(range(date), collapse = "-"),
-            summederror = errorcalc(sum, na.omit(dailycost)),
-            meanerror = errorcalc(mean, na.omit(dailycost)),
-            medianerror = errorcalc(median,na.omit(dailycost)),
-            summedupper = errorcalc(sum,na.omit(dailyupper)),
-            meanupper = errorcalc(mean,na.omit(dailyupper)),
-            medianupper = errorcalc(median,na.omit(dailyupper)))
-
-compare_multimodel_id <- singlecosts %>% group_by(id) %>%
-  summarise(timerange = paste0(range(date), collapse = "-"),
-            maxerror = errorcalc(max, na.omit(dailycost)),
-            meanerror = errorcalc(mean, na.omit(dailycost)),
-            medianerror = errorcalc(median,na.omit(dailycost)),
-            maxupper = errorcalc(max,na.omit(dailyupper)),
-            meanupper = errorcalc(mean,na.omit(dailyupper)),
-            medianupper = errorcalc(median,na.omit(dailyupper)))
+compare_models
 ```
-
-eigentlich geht nur ein mittelmaß wegen der überschneidenden zeitbereiche oder verwendung mehrerer models, deswegen wird wo nötig max() verwendet.
 
 ## **1. `autoplot()` – Funktion und Interpretation**
 
@@ -281,8 +252,82 @@ eigentlich geht nur ein mittelmaß wegen der überschneidenden zeitbereiche oder
 
 # Visualisierung von Modell + Vorhersage
 p <- autoplot(data) +
-  autolayer(fc, level = 80, alpha = 0.4) +
-  labs(title = "Prognose der nächsten 60 Tage",
+  autolayer(fc, level = c(80,95)) +
+  labs(title = "Prognoseplot",
+       y = "Wert",
+       x = "Datum")
+
+ggplotly(p)
+```
+
+```{r}
+multiply_vector <- function(x) {
+  y <- 1
+  for (i in 1:length(x)) {
+    y <- y * x[i]
+  }
+  return(y)
+}
+
+mq <- function(x, q = 0.9, frame = 7) {
+  y <- numeric()
+  for (i in 1:length(x)) {
+    ifelse((i - frame) <= 0,
+           value <- 0,
+           value <- quantile(x[(i - frame):i], q))
+    y <- c(y, value)
+  }
+  return(y)
+}
+
+combined <- singlecosts %>% 
+  filter(model %in% c("ma", "snaive", "ets", "ets_season")) %>%
+  group_by(date, value) %>% summarise(comb_pred = max(predicted))
+
+mq <- data %>% 
+  mutate(mq = mq(value, q = 0.999, frame = 4)) %>% 
+  select(date,
+         value = mq)
+
+p <- ggplot(data = combined) + 
+  geom_line(aes(x = date, y = value), colour = "black") +
+  geom_line(aes(x = date, y = comb_pred), colour = "red") +
+  geom_line(data = mq, aes(x = date, y = value), colour = "blue")
+
+ggplotly(p)
+
+
+```
+
+```{r}
+# Kreuzvalidierung
+cv <- mq %>%
+  slide_tsibble(.size = 180, .step = 60)
+
+# Training
+system.time(
+  progressr::with_progress(
+    model <- cv %>%
+      model(#snaive = SNAIVE(value),
+            arima = ARIMA(value ~ pdq())
+            # ets_season = ETS(value ~ error("N") + trend("N") + season("A")),
+            #ets = ETS(value)
+            ) 
+    )
+)
+
+
+# Vorhersage
+fc <- model %>%
+  forecast(h = "60 days" )
+```
+
+```{r}
+# Visualisierung von Modell + Vorhersage
+p <- autoplot(data) +
+  # autolayer(mq) + 
+  autolayer(fc, level = c(80,95)) +
+  labs(title = "Prognoseplot",
        y = "Wert",
        x = "Datum")
 

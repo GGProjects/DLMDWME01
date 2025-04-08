@@ -3,6 +3,7 @@ title: "Exploratory Analysis: StandyBy Data"
 author: "Georg Grunsky"
 format: html
 editor: visual
+bibliography: references.bib
 ---
 
 ## Reading the Data
@@ -18,7 +19,6 @@ Reading the csv-file
 require(readr)
 sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
     col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
-head(sickness_csv)
 ```
 
 Reading the excel-file
@@ -144,7 +144,7 @@ sby_need (the predicted variable) is apparently mostly depended on the number of
 
 Logically there should be a dependency between the number of sick personnel and the n_duty feature, which can't be seen in this plots. In the next section, we will add another plot with an ordered nb_sick column in comparison to n_duty and the number of emergency calls.
 
-## Focus on specific variables
+## Focus on specific variables {#sec-focus-on-specific-variables}
 
 ```{r}
 #| message: false
@@ -185,6 +185,7 @@ Regarding the figures all three variables in question are mostly affected by the
 ```{r}
 #| message: false
 #| warning: false
+#| label: reshape and aggregate
 require(ggplot2, quietly = T)
 require(plotly, quietly = T)
 require(data.table, quietly = T)
@@ -412,6 +413,155 @@ die Jahre 2016 und 2017 sind nahezu gleich, Änderungen vor allem in 2018 und im
 Selbst wenn 50 als Fixwert mit Sicherheitsreserve (statt 0-Vorhersagen) gewählt wird, können täglich immer noch (90 - 50) \* 165 Euro (€6.600,-), nur anhand der explorativen Datenanalyse, eingespart werden und man hätte mit 80% Wahrscheinlichkeit immer noch genug StandBy-Personal. Wenn der Vorhersage-Algorithmus die restlichen 20% Ausreißer "findet", ist das Ziel erreicht.
 
 Algorithmen werden vermutlich mit log-Werten besser umgehen können, weil sich Ausreißer weniger Stark auswirken.
+
+### Zeitreihenanalyse
+
+vgl. [@hyndman_forecasting_2021]
+
+```{r}
+#| label: load packages
+#| message: false
+#| warning: false
+#| include: false
+
+require(fable)
+require(tsibble)
+require(lubridate)
+require(dplyr)
+require(tidyverse)
+require(readr)
+require(plotly)
+require(fpp3)
+require(ggplot2)
+```
+
+#### create tsibble
+
+```{r}
+sickness_csv$date <- as.Date(sickness_csv$date)
+ts_sick <- sickness_csv %>% 
+  select(date, sby_need) %>%
+  as_tsibble(index = date)
+```
+
+#### Plot sby_need from tsibble
+
+```{r}
+ts_sick %>%
+  autoplot() %>%
+  labs(title = "Einberufenes StandBy Personal",
+       subtitle = "Gesamtübersicht",
+       y = "Anzahl Personal")
+```
+
+#### Seasonal Plot
+
+```{r}
+ts_sick %>%
+  gg_season(sby_need, period = "1y") %>%
+  labs(title = "Einberufenes StandBy Personal",
+       subtitle = "Saisonale Übersicht",
+       y = "Anzahl Personal")
+
+
+```
+
+keine eindeutige saisonalität erkennbar, vielleicht im aggregierten wochendatensatz ähnlich @sec-focus-on-specific-variables
+
+Warum summarise to max(value)
+
+```{r}
+#| message: false
+#| warning: false
+#| paged-print: false
+ts_week <- sickness_csv %>%
+  mutate(week = yearweek(date),
+         calls100 = calls/100,
+         calls_per_sick = calls / n_sick) %>%
+  select(week, n_sick, calls100, calls_per_sick, sby_need) %>%
+  reshape2::melt(id.vars = "week") %>%
+  group_by(week, variable) %>%
+  summarise(max_value = max(value)) %>%
+  as_tsibble(key = variable,
+             index = week)
+```
+
+```{r}
+ts_week %>% 
+  autoplot()
+```
+
+```{r}
+ts_week %>%
+  gg_season(max_value, period = "1y")
+```
+
+#### ACF
+
+```{r}
+# Tagesdaten
+ts_sick %>% 
+  ACF(sby_need, lag_max = 60) %>%
+  autoplot()
+```
+
+Die höhere Autokorrelation in den niedriegen lags zeigt, dass die Daten einem Trend nterliegen. Die kleinen Peaks bei 6, 13, und 22 zeigen eine leichte wochenweise Saisonalität und die höheren Ausschläge bei 28, 31 und 33 entsprechen der untersuchten Saisonalität von vier bis fünf Wochen. Die bisherigen Annahmen werden bestätigt.
+
+```{r}
+# Wochendaten
+ts_week %>% 
+  ACF(max_value, lag_max = 60) %>%
+  autoplot()
+
+
+```
+
+```{r}
+ts_week %>% features(max_value, feat_acf)
+
+```
+
+Interpretation Autokorrelationsplots und -Werte!!
+
+#### Decomposition
+
+```{r}
+ts_sick %>%
+  model(
+    STL(sby_need ~ trend(window = 7) +
+                   season(window = "periodic"),
+    robust = TRUE)) %>%
+  components() %>%
+  autoplot()
+```
+
+```{r}
+ts_week %>%
+  model(
+    STL(max_value ~ trend(window = 52) +
+                   season(window = "periodic"),
+    robust = TRUE)) %>%
+  components() %>%
+  autoplot()
+```
+
+```{r}
+ts_week$log_value <- log(ts_week$max_value + 1)
+ts_week %>%
+  model(
+    STL(log_value ~ trend(window = 52) +
+                   season(window = "periodic"),
+    robust = TRUE)) %>%
+  components() %>%
+  autoplot()
+
+```
+
+Ziel: negativer remainder um zu niedrige Schätzungen zu durch Saisonales Modell zu vermeiden.
+
+Höhere Volatilität in remainder ab Ende 2018 erkennbar.
+
+Trend kann als Basiswert für Standbypersonal herangezogen werden
 
 ## Over-all Conclusion:
 
