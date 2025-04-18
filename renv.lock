@@ -2411,6 +2411,43 @@
       "Maintainer": "Rob Hyndman <Rob.Hyndman@monash.edu>",
       "Repository": "CRAN"
     },
+    "fpp3": {
+      "Package": "fpp3",
+      "Version": "1.0.1",
+      "Source": "Repository",
+      "Title": "Data for \"Forecasting: Principles and Practice\" (3rd Edition)",
+      "Authors@R": "c(person(given = \"Rob\", family = \"Hyndman\", role = c(\"aut\", \"cre\", \"cph\"), email = \"Rob.Hyndman@monash.edu\", comment = c(ORCID = \"0000-0002-2140-5352\")), person(given = \"George\", family = \"Athanasopoulos\", role = \"ctb\"), person(given = \"Mitchell\", family = \"O'Hara-Wild\", role = \"ctb\"), person(given = \"Nuwani\", family = \"Palihawadana\", role = \"ctb\"), person(given = \"Shanika\", family = \"Wickramasuriya\", role = \"ctb\"), person(given = \"RStudio\", role = c(\"cph\")))",
+      "Description": "All data sets required for the examples and exercises in the book \"Forecasting: principles and practice\" by Rob J Hyndman and George Athanasopoulos <https://OTexts.com/fpp3/>. All packages required to run the examples are also loaded. Additional data sets not used in the book are also included.",
+      "License": "GPL-3",
+      "URL": "https://pkg.robjhyndman.com/fpp3/, https://github.com/robjhyndman/fpp3, https://OTexts.com/fpp3/",
+      "BugReports": "https://github.com/robjhyndman/fpp3/issues",
+      "Depends": [
+        "R (>= 4.1.0)"
+      ],
+      "Imports": [
+        "cli (>= 1.0.0)",
+        "crayon (>= 1.3.4)",
+        "dplyr (>= 0.7.4)",
+        "fable (>= 0.3.0)",
+        "fabletools (>= 0.3.0)",
+        "feasts (>= 0.1.7)",
+        "ggplot2 (>= 3.1.1)",
+        "lubridate (>= 1.7.4)",
+        "purrr (>= 0.2.4)",
+        "rstudioapi (>= 0.7)",
+        "tibble (>= 1.4.2)",
+        "tidyr (>= 0.8.3)",
+        "tsibble (>= 0.9.3)",
+        "tsibbledata (>= 0.2.0)"
+      ],
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "RoxygenNote": "7.3.2",
+      "NeedsCompilation": "no",
+      "Author": "Rob Hyndman [aut, cre, cph] (<https://orcid.org/0000-0002-2140-5352>), George Athanasopoulos [ctb], Mitchell O'Hara-Wild [ctb], Nuwani Palihawadana [ctb], Shanika Wickramasuriya [ctb], RStudio [cph]",
+      "Maintainer": "Rob Hyndman <Rob.Hyndman@monash.edu>",
+      "Repository": "CRAN"
+    },
     "fracdiff": {
       "Package": "fracdiff",
       "Version": "1.5-3",
@@ -6578,6 +6615,37 @@
       "NeedsCompilation": "no",
       "Author": "Earo Wang [aut, cre] (<https://orcid.org/0000-0001-6448-5260>), Di Cook [aut, ths] (<https://orcid.org/0000-0002-3813-7155>), Rob Hyndman [aut, ths] (<https://orcid.org/0000-0002-2140-5352>), Mitchell O'Hara-Wild [aut] (<https://orcid.org/0000-0001-6729-7695>), Tyler Smith [ctb], Wil Davis [ctb]",
       "Maintainer": "Earo Wang <earo.wang@gmail.com>",
+      "Repository": "CRAN"
+    },
+    "tsibbledata": {
+      "Package": "tsibbledata",
+      "Version": "0.4.1",
+      "Source": "Repository",
+      "Title": "Diverse Datasets for 'tsibble'",
+      "Description": "Provides diverse datasets in the 'tsibble' data structure. These datasets are useful for learning and demonstrating how tidy temporal data can tidied, visualised, and forecasted.",
+      "Authors@R": "c( person(\"Mitchell\", \"O'Hara-Wild\", email = \"mail@mitchelloharawild.com\", role = c(\"aut\", \"cre\")), person(\"Rob\", \"Hyndman\", role = \"aut\"), person(\"Earo\", \"Wang\", role = \"aut\"), person(\"Rakshitha\", \"Godahewa\", role = \"aut\"), person(\"Christoph\", \"Bergmeir\", role = \"ctb\") )",
+      "Depends": [
+        "R (>= 3.1.3)"
+      ],
+      "Imports": [
+        "tsibble (>= 0.9.0)",
+        "vctrs",
+        "rappdirs",
+        "utils"
+      ],
+      "Suggests": [
+        "ggplot2"
+      ],
+      "ByteCompile": "true",
+      "License": "GPL-3",
+      "URL": "https://tsibbledata.tidyverts.org/, https://github.com/tidyverts/tsibbledata/",
+      "BugReports": "https://github.com/tidyverts/tsibbledata/issues",
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "RoxygenNote": "7.2.1",
+      "NeedsCompilation": "no",
+      "Author": "Mitchell O'Hara-Wild [aut, cre], Rob Hyndman [aut], Earo Wang [aut], Rakshitha Godahewa [aut], Christoph Bergmeir [ctb]",
+      "Maintainer": "Mitchell O'Hara-Wild <mail@mitchelloharawild.com>",
       "Repository": "CRAN"
     },
     "tzdb": {

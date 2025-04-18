@@ -516,12 +516,20 @@ ts_week %>%
 
 ```
 
+shannon entropy: Aussage über Leichtigkeit der Vorhersage
+
 ```{r}
-ts_week %>% features(max_value, feat_acf)
+ts_sick %>% features(sby_need, feat_spectral)
+
+ts_week %>% features(log_value, feat_spectral)
 
 ```
 
 Interpretation Autokorrelationsplots und -Werte!!
+
+```{r}
+ts_week %>% features(max_value, feat_acf)
+```
 
 #### Decomposition
 
@@ -549,8 +557,8 @@ ts_week %>%
 ts_week$log_value <- log(ts_week$max_value + 1)
 ts_week %>%
   model(
-    STL(log_value ~ trend(window = 52) +
-                   season(window = "periodic"),
+    STL(log_value ~ trend(window = 53) +
+                   season(period = "1 year"),
     robust = TRUE)) %>%
   components() %>%
   autoplot()
@@ -562,6 +570,67 @@ Ziel: negativer remainder um zu niedrige Schätzungen zu durch Saisonales Modell
 Höhere Volatilität in remainder ab Ende 2018 erkennbar.
 
 Trend kann als Basiswert für Standbypersonal herangezogen werden
+
+```{r}
+mq <- function(x, q = 0.9, frame = 7) {
+  y <- numeric()
+  for (i in 1:length(x)) {
+    base::ifelse(
+      ((i - floor(frame/2)) <= 0) |
+        ((i + floor(frame/2)) >= length(x)),
+           value <- 0,
+           value <- quantile(x[(i - floor(frame/2)):(i + floor(frame/2))],
+                             q))
+    y <- c(y, value)
+  }
+  return(y)
+}
+```
+
+```{r}
+ts_sick_mq <- ts_sick %>%
+  mutate(mq = mq(sby_need, q = 0.99, frame = 8),
+         mq2 = mq(mq, q = 0.99, frame = 8),
+         ma = ma(mq, order = 8, centre = TRUE)
+         )
+
+ts_sick_mq %>%
+  autoplot(mq2)
+
+```
+
+```{r}
+ts_sick_mq %>% features(mq, feat_spectral)
+ts_sick_mq %>% features(mq2, feat_spectral)
+ts_sick_mq %>% features(ma, feat_spectral)
+```
+
+```{r}
+ts_week_mq <- ts_week %>%
+  mutate(
+    mq = mq(log_value, q = 0.99, frame = 5),
+    mq2 = mq(mq, q = 0.99, frame = 3),
+    ma = ma(mq, order = 5, centre = TRUE)
+    )
+
+ts_week_mq %>%
+  autoplot(mq2)
+
+```
+
+```{r}
+ts_week_mq %>% features(mq2, feat_spectral)
+```
+
+```{r}
+ts_sick_mq %>%
+  model(
+    STL(mq2 ~ trend(window = 53) +
+          season(period = "1 year"),
+        robust = TRUE)) %>%
+  components() %>%
+  autoplot()
+```
 
 ## Over-all Conclusion:
 

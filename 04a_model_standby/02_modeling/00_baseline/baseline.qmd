@@ -261,45 +261,6 @@ ggplotly(p)
 ```
 
 ```{r}
-multiply_vector <- function(x) {
-  y <- 1
-  for (i in 1:length(x)) {
-    y <- y * x[i]
-  }
-  return(y)
-}
-
-mq <- function(x, q = 0.9, frame = 7) {
-  y <- numeric()
-  for (i in 1:length(x)) {
-    ifelse((i - frame) <= 0,
-           value <- 0,
-           value <- quantile(x[(i - frame):i], q))
-    y <- c(y, value)
-  }
-  return(y)
-}
-
-combined <- singlecosts %>% 
-  filter(model %in% c("ma", "snaive", "ets", "ets_season")) %>%
-  group_by(date, value) %>% summarise(comb_pred = max(predicted))
-
-mq <- data %>% 
-  mutate(mq = mq(value, q = 0.999, frame = 4)) %>% 
-  select(date,
-         value = mq)
-
-p <- ggplot(data = combined) + 
-  geom_line(aes(x = date, y = value), colour = "black") +
-  geom_line(aes(x = date, y = comb_pred), colour = "red") +
-  geom_line(data = mq, aes(x = date, y = value), colour = "blue")
-
-ggplotly(p)
-
-
-```
-
-```{r}
 # Kreuzvalidierung
 cv <- mq %>%
   slide_tsibble(.size = 180, .step = 60)
@@ -334,4 +295,98 @@ p <- autoplot(data) +
 ggplotly(p)
 ```
 
-vignette("transformations", package = "fable")
+```{r}
+# Kreuzvalidierung
+cv <- ts_week %>%
+  stretch_tsibble(.init = 106, .step = 3)
+
+decomp_spec <- decomposition_model(
+  # STL(log(max_value + 1)),
+  STL(log(max_value + 1) ~ trend(window = 53) +
+                   season(period = "1 year")),
+  ETS(season_adjust ~ season("N"))
+)
+
+# Training
+system.time(
+  progressr::with_progress(
+    model <- cv %>%
+      model(
+        stl_ets = decomp_spec
+      )
+  )
+)
+
+
+# Vorhersage
+fc <- model %>%
+  forecast(h = "10 weeks", level = c(60,95)) 
+
+ts_week %>%
+  autoplot(max_value, colour = "red") +
+  autolayer(fc, alpha = 0.3) +
+  labs(y = "log-Werte an Personalbedarf",
+       title = "Wochenmaximum an Bereitschaftspersonal")
+```
+
+```{r}
+fc %>%
+  accuracy(
+    list(qs = quantile_score), probs = 0.10
+    )
+```
+
+```{r}
+cv <- ts_sick_mq %>%
+  stretch_tsibble(.init = 106, .step = 3)
+
+decomp_spec <- decomposition_model(
+  STL(mq2 ~ trend(window = 53) +
+                   season(period = "1 year")),
+  ETS(season_adjust ~ season("N"))
+)
+
+# Training
+system.time(
+  progressr::with_progress(
+    model <- cv %>%
+      model(
+        stl_ets = decomp_spec,
+        snaive = SNAIVE(mq2),
+        arima = ARIMA(mq2 ~ pdq()),
+        ets_season = ETS(mq2 ~ error("N") + trend("N") + season("A")),
+        ets = ETS(mq2)
+        )
+  )
+)
+
+
+# Vorhersage
+system.time(
+  progressr::with_progress(
+    fc <- model %>%
+      forecast(h = "10 weeks", level = c(95))
+  )
+)
+
+
+
+p <- ts_sick_mq %>%
+  filter(date >= "2019-04-01") %>%
+  autoplot(sby_need, colour = "red") +
+  autolayer(filter(fc,date >= "2019-04-01"),
+            alpha = 0.3) +
+  labs(y = "Personalbedarf",
+       title = "Bedarf an Bereitschaftspersonal")
+
+ggplotly(p)
+```
+
+\
+
+```{r}
+fc %>%
+  accuracy(
+    list(qs = quantile_score), probs = 0.10
+    )
+```
