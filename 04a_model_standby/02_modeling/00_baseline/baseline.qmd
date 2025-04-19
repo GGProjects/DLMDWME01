@@ -153,7 +153,7 @@ lossfunction(obs = data[between(data$date,
 
 ### Data Splitting
 
-Data Splitting / Kreuzvalidierung in Zeitreihen blabla wie funktionierts
+Data Splitting / Kreuzvalidierung in Zeitreihen blabla wie funktionierts mit fable
 
 ```{r}
 # Kreuzvalidierung

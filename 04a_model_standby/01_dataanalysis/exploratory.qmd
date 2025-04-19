@@ -1,141 +1,130 @@
 ---
 title: "Exploratory Analysis: StandyBy Data"
 author: "Georg Grunsky"
-format: html
 editor: visual
 bibliography: references.bib
 ---
 
-## Reading the Data
+Dieses Dokument beschreibt die vorbereitenden Abschnitte Prüfung der Datenqualität und Explorative Datenanalyse für den bestehenden Use Case. Die Bereiche Datenaufbereitung und Modellierung werden in den jeweiligen Modellverzeichnissen behandelt. [@pak_fallstudie_2022]
 
-Two files provided: sickness_table.csv and sickness_table.xlsx Files are apparently the same. Needs to be checked:
+# Feststellen der Datenqualität
 
-Reading the csv-file
+## Datensätze einlesen
+
+Die Daten werden in zwei Dateien bereitgestellt: ***sickness_table.csv*** und ***sickness_table.xlsx***. Augenscheinlich handelt es sich dabei um den selben Datensatz,was jedoch eingangs noch zu überprüfen ist.
 
 ```{r}
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
+
 require(readr)
-sickness_csv <- read_csv("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.csv", 
+path_to_samples <- "../00_sample_data/"
+sickness_csv <- read_csv(paste0(path_to_samples,"01_raw/sickness_table.csv"), 
     col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
+head(sickness_csv)
 ```
 
-Reading the excel-file
-
 ```{r}
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
+
 require(readxl)
-sickness_xls <- read_excel("C:/Users/ChSnsMgt/iCloudDrive/DLMDWME01/01_data/01_lake/01_use_case_2/sickness_table.xlsx", 
+sickness_xls <- read_excel(paste0(path_to_samples,"01_raw/sickness_table.xlsx"), 
     col_types = c("numeric", "date", "numeric", 
         "numeric", "numeric", "numeric", "numeric", 
         "numeric"))
 head(sickness_xls)
 ```
 
-Identical check
+## Datensätze vergleichen
 
 ```{r}
 identical(sickness_csv, sickness_xls)
 ```
 
-Quick identical check says false. Datastructure and Datasummary will be run on both datasets for detailed comparison.
+Die Überprüfung mittels *identical* besagt, dass die Datensätze nich identisch sind. Die in den jeweiligen Daten-Dictionaries beschriebenen Datenstrukturen lassen jedoch schon darauf schließen. Eine Summary der Wertebereiche der vorliegenden Daten schafft mehr Klarheit.
 
-## Datastructure
-
-Print out data structure
+## Daten Summary
 
 ### sickness_csv
 
 ```{r}
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
-
-str(sickness_csv)
-
-```
-
-### sickness_xls
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-str(sickness_xls)
-```
-
-## Data Summary
-
-Run base package summary on both data sets
-
-### sickness_csv
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-print("### sickness_csv:")
 
 summary(sickness_csv)
-
 ```
 
 ### sickness_xls
 
 ```{r}
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
-
 
 summary(sickness_xls)
 ```
 
-Conclusion:
+Gemäß den angezeigten Wertebereichen handelt es sich tatsächlich um die gleichen Datensätze.
 
-1.  Obviously the data sets are identical. In further exploration only the csv will be used.
-2.  From the summary one can read that constant 90 n_sby is to much in most cases compared with sby_need but there are occasions where more than that is needed.
-3.  The timerange of the data goes from 2016-04-01 to 2019-05-27. Thats a period of three years which started before the "covid era" and ended just after the beginning of the latter. Covid certainly had an ongoing effect on sicknesses and emergency calls in the scenario. So we know, the data is outdated, but we still we need to use it for the prediction and hope to convince the directors board with our model and get the possibility to acquire more actual data in the future.
-4.  The number of calls and the number of sick personel seem to have a similar proportion, only by the factor of 100. A thing to keep in mind.
+Anhand der .csv Datei wird noch überprüft ob der Datensatz fehlende Werte beinhaltet, bevor mit der weiteren Datenexploration fortgefahren wird.
 
-## Look for NAs and missing dates
-
-We also need to check whether there are any NAs or missing dates in the data set. It didn't look like it though.
+## NAs und "Missing Values"
 
 ```{r}
-
-bp <- sickness_csv
-
-# sickness_csv[30,7] <- NA
-# sickness_csv[100,2] <- NA
+#| echo: true
+#| message: false
+#| warning: false
 
 alldays <- seq(from = as.Date("2016-04-01"),
                to = as.Date("2019-05-27"),
                by = 1)
+
 if (identical(alldays, as.Date(sickness_csv$date))) print("no missing dates") else print("you have to deal w/ missing dates")
 
 if (!anyNA.data.frame(sickness_csv)) print("no missing values") else print("you have to deal w/ missing values")
-
-bp -> sickness_csv
 ```
 
-Luckily we don't have to deal with either missing dates or values.
+In dieser Zeitreihe haben wir weder mit fehlenden Zeitwerten noch NAs in den Datenpunkten umzugehen. Die Prüfung der Datenqualität wird somit abgeschlossen.
 
-## Data Quality
+## Zusammenfassung
 
-asdfasdfaf
-
-## Overview variables
+1.  Die bereitgestellten Datensätze scheinen identisch zu sein. Es wird nur mit der .csv Datei weitergearbeitet.
 
 ```{r}
 #| message: false
 #| warning: false
-plot(sickness_csv)
+#| include: false
+
+rm(sickness_xls)
+```
+
+2.  Es gibt keine fehlenden Zeitwerte und/oder NAs in den Datenpunkten
+3.  Der bisherige Fixwert von 90 Bereitschaftspersonen (*n_sby*) scheint in den meisten Fällen im Vergleich zu *sby_need* zu hoch zu sein. Es gibt jedoch auf Tage wo mehr als 90 Personen gebraucht werden.
+4.  Die Zeitreihe behandelt den Zeitraum von 2016-04-01 bis 2019-05-27. Eine Periode von drei Jahren vor der COVID Pandemie. Es ist davon auszugehen, dass COVID die aktuellen Zahlen verändert hat. Denoch hilft eine erfolgreiche Umsetzung einer Vorhersage auf den Testdaten, das Projekt mit aktuellen Daten voranzutreiben und zukünftig Bereitschaftskosten sparen zu können.
+5.  Die Anzahl der Anrufe und die Anzahl des krankgemeldeten Personals scheint ähnliche Proportionen aufzuweisen, nur um etwa den Faktor 100 kleiner.
+
+# Explorative Datenanalyse
+
+@hyndman_forecasting_2021 bietet von der Exploration bis zur Modellierung einen sehr ausführlichen Anhalt für die Arbeit mit Zeitreihendaten. Ein weiteres R-Package, das gute Werkzeuge für die explorative Analyse aber auch für die Erstellung von Models anbietet ist *caret*. Das Paket eignet sich zwar weniger gut für Zeitreihendaten, aus der Dokumentation alleine kann aber bereits viel gelernt werden. [@kuhn_caret_2019].
+
+## Mekrmalsübersicht
+
+Datenplots unterstützen in der Feststellung von Abhängigkeiten und Verteilungen. Die erste Spalte (*id*), die bisher konstante Einteilung des Bereitschaftspersonals (*n_sby*), sowie die Anzahl der zusätzlich benötigten Fahrer:innen (*dafted*) werden, zur besseren Übersicht, hierbei bereits ausgeblendet.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+require(dplyr)
+
+sickness <- sickness_csv %>%
+  select(-c("...1", "n_sby", "dafted"))
+plot(sickness)
 ```
 
 Conclusion:
@@ -637,3 +626,5 @@ ts_sick_mq %>%
 1.  We do have a positive trend over the years with a sharp increase in the need of standby personnel since start of 2019
 2.  We possibly can use the call_per_sick feature as predictor regarding the logarithmic smooth curve on a weekly scale. Still, in this case the calls and the number of sick drivers needs to be predicted first, because they will not be known in advance. According to the day of month-plot, that might a doable task.
 3.  A linear regression based on smooth curves alone will probably not work out well. We still need to consider a strong weekly seasonality, a dependence on the day of month and a minor monthly seasonality. To properly forceast sby_need values, a decomposition of the time-series data could be advisable.
+
+# Literaturverzeichnis
