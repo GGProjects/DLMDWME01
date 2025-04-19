@@ -1,0 +1,48 @@
+project:
+  type: default
+  title: DLMDWME01
+  output-dir: 00_docs/03_artifacts
+  render:
+   - "*.qmd"
+   - "!*.md"
+   - "!index.qmd"
+
+# manuscript:
+#   article: index.qmd
+
+format:
+  # html:
+  #  comments:
+  #    hypothesis: true
+  # docx: default
+  
+  # jats: default
+  pdf:
+    toc: false
+    # toc-depth: 3
+    number-sections: false
+    page-style: empty
+    page-numbering: false
+    documentclass: scrreprt
+    classoption:
+      - 11pt
+      - paper=a4
+      - listof=totocnumbered
+      - numbers=noendperiod
+      - bibliography=totocnumbered
+    geometry: left=2cm, right=2cm, top=2cm, bottom=2cm
+    fontsize: 11pt
+    linestretch: 1.5
+    mainfont: Arial
+    sansfont: Arial
+    monofont: Courier New
+    papersize: a4
+    # pdf-engine: lualatex
+lang: de
+
+
+execute:
+  freeze: true
+
+
+

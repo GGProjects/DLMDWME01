@@ -2,6 +2,7 @@
 .Rproj.user
 *.Rproj
 *.Rprofile
-.RData
 .Rhistory
+.Rprofile
+.RData
 .quarto/
