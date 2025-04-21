@@ -41,6 +41,10 @@ head(sickness_xls)
 ## Datensätze vergleichen
 
 ```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
 identical(sickness_csv, sickness_xls)
 ```
 
@@ -99,7 +103,9 @@ In dieser Zeitreihe haben wir weder mit fehlenden Zeitwerten noch NAs in den Dat
 #| warning: false
 #| include: false
 
-rm(sickness_xls)
+rm(sickness_xls,
+   path_to_samples,
+   alldays)
 ```
 
 2.  Es gibt keine fehlenden Zeitwerte und/oder NAs in den Datenpunkten
@@ -111,7 +117,7 @@ rm(sickness_xls)
 
 @hyndman_forecasting_2021 bietet von der Exploration bis zur Modellierung einen sehr ausführlichen Anhalt für die Arbeit mit Zeitreihendaten. Ein weiteres R-Package, das gute Werkzeuge für die explorative Analyse aber auch für die Erstellung von Models anbietet ist *caret*. Das Paket eignet sich zwar weniger gut für Zeitreihendaten, aus der Dokumentation alleine kann aber bereits viel gelernt werden. [@kuhn_caret_2019].
 
-## Mekrmalsübersicht
+## Merkmalsübersicht
 
 Datenplots unterstützen in der Feststellung von Abhängigkeiten und Verteilungen. Die erste Spalte (*id*), die bisher konstante Einteilung des Bereitschaftspersonals (*n_sby*), sowie die Anzahl der zusätzlich benötigten Fahrer:innen (*dafted*) werden, zur besseren Übersicht, hierbei bereits ausgeblendet.
 
@@ -127,47 +133,68 @@ sickness <- sickness_csv %>%
 plot(sickness)
 ```
 
-Conclusion:
+*sby_need* (die Zielvariable) korreliert augenscheinlich am meisten mit der Anzahl der Notfallanrufe (*calls*). Das klingt durchaus plausibel. Die vermutete Saisonalität ist in der Übersicht der Variablen *sby_need*, *calls* und *n_sick* (der Anzahl der krankgemeldeten Bereitschaftsfahrer:innen), mit dem menschlichen Auge, gut zu erkennen.
 
-sby_need (the predicted variable) is apparently mostly depended on the number of calls, (which makes sense) and on dafted personnel (which will be ignored because that is to be avoided). A hint of dependency is also recognizable between the variables sby_need, calls and n_sick and the variable date, which could acknowledge the alleged seasonality of the data. It is advisable to shift the focus to these features.
+Das Merkmal *n_duty* (die Anzahl der diensthabenden Bereitschaftsfahrer:innen) weist nur drei unterschiedliche Werte auf, die keine Abhängigkeit zu anderen Merkmalen zu haben scheinen.
 
-Logically there should be a dependency between the number of sick personnel and the n_duty feature, which can't be seen in this plots. In the next section, we will add another plot with an ordered nb_sick column in comparison to n_duty and the number of emergency calls.
+*n_sick* zeigt zwar die angesprochene Saisonalität, scheint aufgrund der o.a. Grafik jedoch keine Abhängig zu der Zielvariable aufzuweisen.
 
-## Focus on specific variables {#sec-focus-on-specific-variables}
+Für die Vorhersage des Merkmals *sby_need* gibt es zu diesem Zeitpunkt daher zwei Ansatzpunkte.
 
-```{r}
-#| message: false
-#| warning: false
-plot(sickness_csv[order(sickness_csv$n_sick),c(3:5)])
-plot(sickness_csv[,c(2:4,7)])
-```
+1.  Die direkte Vorhersage aufgrund des Datum und der eigenen Saisonalität
+2.  Eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need*.
 
-The first plot shows, that n_duty has only three different values which are not affected by n_sick. We won't have influence on n_duty with our prediction model in the first run, so we can ignore that variable. It also shows that there seems to be no dependency between n_sick and calls. Still there are two ideas
-
-1.  We know from a previous analysis that n_sick and calls possibly have a similar value distribution (only by a factor of 100) but are not related to each other. Still it will be difficult to get these two variables on the same plot. Let's try to add a feature with divided calls by 100 to get them on the same scale.
-2.  It sounds logical, that the more sick personel the more reduced the ability to respond to emergency calls (even that n_duty was not related to n_sick). Probably it might be interesting to add another feature that shows calls per sick personnel to describe the mentioned ability to respond to emergencies. If there was a relation between those to, the average result would be around 100 (the factor), but fortunately there wasn't.
-
-In the second figure, it seems even more clearly that the date has an influence on the other three variables. Let's therefore generate some more features out of the date variable to see if it is possible to be more specific about this fact. The shown figures analyse the three variables in comparison to the new features.
+Die weitere Analyse konzentriert sich daher auf die Merkmale *date*, *sby_need* und *calls*.
 
 ```{r}
+#| echo: true
 #| message: false
 #| warning: false
-require(lubridate, quietly = T)
-require(dbplyr, quietly = T)
-sick <- sickness_csv[,c(2:4,7)]
-sick <- sick %>% dplyr::mutate(year = lubridate::year(date),
-                        month = lubridate::month(date),
-                        week = lubridate::week(date),
-                        wday = lubridate::wday(date),
-                        calls100 = calls/100,
-                        call_per_sick = calls/n_sick, 
-                        day = lubridate::day(date))
-plot(sick[,c(4:8)])
-plot(sick[,c(2,5:8)])
-plot(sick[,c(3,5:8)])
-plot(sick[,c(10,4:8)])
-plot(sick[,c(2,7,9)])
+
+sickness <- sickness %>%
+  select(-c("n_duty", "n_sick"))
 ```
+
+Um festzustellen welcher Ansatz möglicherweise erfolgversprechender ist, lohnt es sich die beiden Variablen *calls* und *sby_need* auf die vermeintliche vorhersagbarkeit ihrer Saisonalität hin zu überprüfen. @hyndman_forecasting_2021 verweist hierbei auf die Spektrale Entropy (Shannon) einer Zeitreihe, die einen Wert zwischen 0 und 1 ausgibt. Je niedriger der Wert, desto stärker ist die Saisonalität und der Trend der Zeitreihe.
+
+Zuerst muss der Datensatz daher in eine Zeitreihe konvertiert werden.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+require(fpp3)
+
+ts_sby <- sickness %>%
+  mutate(date = as.Date(date)) %>%
+  as_tsibble(index = date)
+```
+
+
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby %>% features_all(feat_spectral)
+```
+
+
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby %>% 
+  ACF(sby_need, lag_max = 90) %>%
+  autoplot()
+```
+
+Die höhere Autokorrelation in den niedriegen lags zeigt, dass die Daten einem Trend nterliegen. Die kleinen Peaks bei 6, 13, und 22 zeigen eine leichte wochenweise Saisonalität und die höheren Ausschläge bei 28, 31 und 33 entsprechen der untersuchten Saisonalität von vier bis fünf Wochen. Die bisherigen Annahmen werden bestätigt.
+
 
 Regarding the figures all three variables in question are mostly affected by the month and the week features. Plus, there seems to be a slight dependency of the target variable sby_need to the new calls_per_sick feature (the value range is similar, so we'll get them on one plot). Let's get into more detail on this.
 
