@@ -181,7 +181,14 @@ ts_sby <- sickness %>%
 ts_sby %>% features_all(feat_spectral)
 ```
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
 
+ts_sby %>% 
+  gg_lag(sby_need, geom = "point") 
+```
 
 ```{r}
 #| echo: true
@@ -189,8 +196,17 @@ ts_sby %>% features_all(feat_spectral)
 #| warning: false
 
 ts_sby %>% 
-  ACF(sby_need, lag_max = 90) %>%
+  ACF(calls, lag_max = 90) %>%
   autoplot()
+```
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby %>%
+  GGally::ggpairs()
+
 ```
 
 Die höhere Autokorrelation in den niedriegen lags zeigt, dass die Daten einem Trend nterliegen. Die kleinen Peaks bei 6, 13, und 22 zeigen eine leichte wochenweise Saisonalität und die höheren Ausschläge bei 28, 31 und 33 entsprechen der untersuchten Saisonalität von vier bis fünf Wochen. Die bisherigen Annahmen werden bestätigt.
