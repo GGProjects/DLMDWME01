@@ -69,10 +69,7 @@ load(file = "../../00_sample_data/02_processed/data_explorative.rda")
 
 # Aufsplitten der Daten in Trianings- und Testdaten
 
-Vorhersagezeitraum etwa 2 Monate
-Datenzeitraum etwa drei Jahre (36 Monate)
-Übliche Aufsplittung 80:20 aber zumindest den Vorhersagezeitraum (ca. 29 Monate:7 Monate) Vorhersagezeitraum gegeben.
-Starker Aufwärtstrend von Anfang 2019 soll im Training aber noch mitgenommen werden, daher reduktion des Testdatensatzes auf 4 Monate (ab 2019-02-01)
+Vorhersagezeitraum etwa 2 Monate Datenzeitraum etwa drei Jahre (36 Monate) Übliche Aufsplittung 80:20 aber zumindest den Vorhersagezeitraum (ca. 29 Monate:7 Monate) Vorhersagezeitraum gegeben. Starker Aufwärtstrend von Anfang 2019 soll im Training aber noch mitgenommen werden, daher reduktion des Testdatensatzes auf 4 Monate (ab 2019-02-01)
 
 Durch moving average erzeugte NAs zu beginn und ende des Datensatzes gleich wegfiltern, damit später keine Fehler mehr daraus resultieren.
 
@@ -84,12 +81,12 @@ Gleichzeitige Reduktion der Variablen in den Datensätzen
 #| warning: false
 
 ts_sby_train <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date < "2019-03-01", !is.na(MA2_8))
+  select(date, calls, MA2_8, diff_nduty, sby_need) %>%
+  filter(date < "2019-02-01", !is.na(MA2_8))
 
 ts_sby_test <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date >= "2019-03-01", !is.na(MA2_8))
+  select(date, calls, MA2_8, diff_nduty, sby_need) %>%
+  filter(date >= "2019-02-01", !is.na(MA2_8))
 
 ```
 
@@ -114,7 +111,7 @@ ggplot(ts_sby_train,
 
 ```
 
-Lineare Korrelation auch im Trainingsdatensatz noch etwa gleich gegeben. 
+Lineare Korrelation auch im Trainingsdatensatz noch etwa gleich gegeben.
 
 ```{r}
 #| echo: true
@@ -134,18 +131,18 @@ Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und 
 #| warning: false
 
 # Training
+decomp_spec <- decomposition_model(
+  STL(MA2_8 ~ trend(window = 121) +
+          season(period = "1 year", window = 121)),
+  RW(season_adjust ~ drift())
+)
+
 system.time(
   progressr::with_progress(
-    sby_basemodel <- ts_sby_train %>%
+    sby_stl <- ts_sby_train %>%
       model(
-        snaive = SNAIVE(sby_need ~ lag(63), drift = TRUE),
-        drift = RW(sby_need ~ drift()),
-        mean = MEAN(sby_need ~ window(size = 63)),
-        ets = ETS(sby_need ~ trend(method = "A") + 
-                    season(method = "A")),
-        tslm = TSLM(sby_need ~ trend() + season()),
-        croston = CROSTON(sby_need)
-      ) 
+        stl = decomp_spec
+        )
   )
 )
 ```
@@ -158,7 +155,7 @@ system.time(
 # Vorhersage
 system.time(
   progressr::with_progress(
-    sby_basefc <- sby_basemodel %>%
+    sby_stlfc <- sby_stl %>%
       forecast(h = "4 months", level = c(80))
   )
 )
@@ -169,39 +166,8 @@ system.time(
 #| message: false
 #| warning: false
 
-p <- sby_basefc %>%
+p <- sby_stlfc %>%
   autoplot(ts_sby_test,
-           level = c(80)) +
-  labs(y = "Anrufe",
-       title = "Vorhersage")
-
-ggplotly(p)
-p
-
-```
-```{r}
-# Monatsweise Aggregation deiner täglichen Daten (falls noch nicht erfolgt)
-ts_sby_week <- ts_sby %>%
-  index_by(week = ~ yearweek(.)) %>%
-  summarise(w_need = mean(MQ7)) %>%
-  filter(!is.na(w_need))
-
-# Modell: Trend + monatsspezifischer saisonaler Effekt
-sby_basemodel <- ts_sby_week %>%
-  #filter_index("2019 W10" ~ .) %>%
-        model(
-        snaive = SNAIVE(w_need ~ lag(52), drift = TRUE),
-        drift = RW(w_need ~ drift()),
-        mean = MEAN(w_need ~ window(size = 52)),
-        tslm = TSLM(w_need ~ trend() + season()),
-        croston = CROSTON(w_need)
-      ) 
-
-# Prognose z. B. für 12 Monate
-sby_basefc <- forecast(sby_basemodel, h = "12 months")
-  
-p <- sby_basefc %>%
-  autoplot(ts_sby_week,
            level = c(80)) +
   labs(y = "Anrufe",
        title = "Vorhersage")
@@ -218,7 +184,7 @@ p
 #| message: false
 #| warning: false
 
-aug <- augment(sby_basemodel)
+aug <- augment(sby_stl)
 
 p <- ggplot(aug, aes(x = .innov, fill = .model)) +
   geom_histogram()
@@ -242,7 +208,7 @@ aug %>% features(.innov, ljung_box, lag = 121)
 #| warning: false
 
 
-mod <- select(sby_basemodel, drift) 
+mod <- select(sby_stl, stl) 
 gg_tsresiduals(mod)
 
 ```
@@ -252,8 +218,8 @@ gg_tsresiduals(mod)
 #| message: false
 #| warning: false
 
-sby_basefc %>%
-  accuracy(ts_sby,
+sby_stlfc %>%
+  accuracy(ts_sby_test,
     list(qs = quantile_score), probs = 0.99
     )
 ```
@@ -265,15 +231,13 @@ sby_basefc %>%
 #| message: false
 #| warning: false
 
-call_pred <- sby_basefc %>%
-  filter(.model == "tslm") %>%
+call_pred <- sby_stlfc %>%
+  filter(.model == "stl") %>%
   as.tibble() %>%
   select(date, calls = .mean) %>%
   mutate(diff_nduty = 200) %>%
   as_tsibble(index = date)
 ```
-
-
 
 ```{r}
 #| echo: true
@@ -297,4 +261,3 @@ p <- ggplot() +
 ggplotly(p)
   
 ```
-

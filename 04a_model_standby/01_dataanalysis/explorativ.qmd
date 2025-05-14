@@ -115,6 +115,18 @@ rm(sickness_xls,
 
 # Explorative Datenanalyse
 
+```{r}
+#| label: load packages
+#| message: false
+#| warning: false
+#| include: false
+
+require(dplyr)
+require(fpp3)
+require(plotly)
+require(ggpubr)
+```
+
 @hyndman_forecasting_2021 bietet von der Exploration bis zur Modellierung einen sehr ausführlichen Anhalt für die Arbeit mit Zeitreihendaten. Ein weiteres R-Package, das gute Werkzeuge für die explorative Analyse aber auch für die Erstellung von Models anbietet ist *caret*. Das Paket eignet sich zwar weniger gut für Zeitreihendaten, aus der Dokumentation alleine kann aber bereits viel gelernt werden. [@kuhn_caret_2019].
 
 ## Merkmalsübersicht
@@ -126,9 +138,6 @@ Datenplots unterstützen in der Feststellung von Abhängigkeiten und Verteilunge
 #| message: false
 #| warning: false
 
-require(dplyr)
-require(fpp3)
-
 ts_sby <- sickness_csv %>%
   select(-c("...1", "n_sby", "dafted")) %>%
   mutate(date = as.Date(date)) %>%
@@ -138,7 +147,7 @@ ts_sby %>%
   GGally::ggpairs()
 ```
 
-*sby_need* (die Zielvariable) korreliert augenscheinlich am meisten mit der Anzahl der Notfallanrufe (*calls*). Das klingt durchaus plausibel. Die vermutete Saisonalität ist in der Übersicht der Variablen *sby_need*, *calls* und *n_sick* (der Anzahl der krankgemeldeten Bereitschaftsfahrer:innen), mit dem menschlichen Auge, gut zu erkennen. und wirkt bei dem Merkmal *calls* am Stabilsten.
+*sby_need* (die Zielvariable) korreliert augenscheinlich am meisten mit der Anzahl der Notfallanrufe (*calls*). Hier liegt, ab einer gewissen Anzahl an *calls* nahezu eine lineare Korrelation vor. Das klingt durchaus plausibel. Die vermutete Saisonalität ist in der Übersicht der Variablen *sby_need*, *calls* und *n_sick* (der Anzahl der krankgemeldeten Bereitschaftsfahrer:innen), mit dem menschlichen Auge, gut zu erkennen. und wirkt bei dem Merkmal *calls* am stabilsten.
 
 Das Merkmal *n_duty* (die Anzahl der diensthabenden Bereitschaftsfahrer:innen) weist nur drei unterschiedliche Werte auf, die ausschließlich eine Abhängigkeit zum Datum haben. Hierbei wurde die Anzahl der Diensthabenden jedes Jahr zum ersten Januar um 100 Personen erhöht. Am 01.01.2019 ist dies jedoch nicht geschehen. Dieser Umstand muss vermutlich gesondert mit den Entscheidungsträgern besprochen und ggf. nachgezogen werden.
 
@@ -163,7 +172,7 @@ $$
 Die Werte von *n_duty* werden für die Analyse ab 01.01.2019 korrigiert und für die Merkmalsgenerierung "regulierter Calls" (*reg_calls*) und *reg_calls_sick* verwendet.
 
 $$
-reg\_calls_t = calls_t - n\_duty_t\ \ |\ \   n\_duty_t = 1700 + (year(t)-2016)*100
+reg\_calls_t = calls_t - n\_duty_t\ \ |\ \   n\_duty_t = 1700 + (year_t - 2016) * 100
 $$ $$
 reg\_calls\_sick_t = \frac{reg\_calls_t}{n\_sick_t}
 $$
@@ -174,10 +183,10 @@ $$
 #| warning: false
 
 ts_sby <- ts_sby %>%
-  mutate(reg_calls = calls - (1700 + (year(date)-2016) * 100),
+  mutate(reg_calls = calls - (1700 + (year(date) - 2016) * 100),
          calls_sick = calls/n_sick,
          reg_calls_sick = reg_calls/n_sick) %>%
-  select(-c("n_duty", "n_sick"))
+  select(-c("n_sick"))
 
 ts_sby %>%
   GGally::ggpairs()
@@ -192,12 +201,13 @@ Um festzustellen welcher Ansatz möglicherweise erfolgversprechender ist, lohnt 
 #| warning: false
 
 ts_sby %>%
-features_all(feat_spectral)
+  select(-c("n_duty")) %>%
+  features_all(feat_spectral)
 ```
 
 Interessanterweise, ist trotz einer augenscheinlich gut erkennbaren Saisonalität der Entropie-Wert durchgehend relativ hoch. Am ehesten scheint sich an dieser Stelle das unregulierte Merkmal der Notfallanrufe (*calls*) für eine saisonal-bedingte Vorhersage zu eignen. Dieses Merkmal scheint annähernd normalverteilt zu sein und die Korrelation zur Zielvariablen *sby_need* liegt nur leicht unter dem regulierten Wert *reg_calls*. *calls_sick* und *reg_calls_sick* schneiden bei der Betrachtung der letzten beiden Faktoren deutlich schlechter ab.
 
-Der Autokorrelationsplot der Variablen *calls* soll weiteren Aufschluss über dieses Merkmal geben.
+Der Autokorrelationsplot der Variablen *calls* soll weiteren Aufschluss über dieses Merkmal geben. Hierfür werden 93 lags, also etwa drei Monate betrachtet.
 
 ```{r}
 #| echo: true
@@ -205,121 +215,209 @@ Der Autokorrelationsplot der Variablen *calls* soll weiteren Aufschluss über di
 #| warning: false
 
 ts_sby %>% 
-  ACF(y = calls, lag_max = 90) %>%
+  ACF(y = calls, lag_max = 93) %>%
   autoplot()
 ```
 
-Die höhere Autokorrelation in den niedrigen "lags", die im Verlauf abnimmt, zeigt, dass die Daten einem Trend unterliegen. Die "kleinen" Peaks bei 7, 14, 21, etc. zeigen eine leichte wochenweise Saisonalität, der etwas höhere bei 28 könnte auch auf eine monatliche Saisonalität hindeuten.
+Die höhere Autokorrelation in den niedrigen "lags", die im Verlauf abnimmt, zeigt, dass die Daten einem Trend unterliegen. Die "kleinen" Peaks bei 7, 14, 21, etc. zeigen eine leichte wochenweise Saisonalität, der etwas höhere bei 28 könnte auch auf eine monatliche Saisonalität hindeuten. Ab läg 63 nimmt der Autokorrelationswert schneller ab
 
-## Decomposition
+Die Autokorrelation der Zielvariable (s.u.) zeigt im Vergleich dazu ebenso die wöchentlichen Peeks, jedoch eine viel schnellere Abnahme der Korrelation zu Beginn des Plots und damit einen weniger stark ausgeprägten Trend. Ab lag 63 wird die Autokorrelation der Zielvariablen mehr oder weniger unbrauchbar.
+
 
 ```{r}
-ts_sby %>%
-  model(
-    STL(calls ~ trend(window = 121) +
-          season(period = "1 month", window = 61))) %>%
-  components() %>%
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby %>% 
+  ACF(y = sby_need, lag_max = 93) %>%
   autoplot()
 ```
 
-Interpretation
+
 
 # Verteilung relevanter Merkmale
 
-Die Verteilung der Zielvariablen und des möglichen Prädiktors soll schlussendlich noch Auschluss, bzw. einen Überblick über die zu erwartenden Werte liefern.
+Die Verteilung der Zielvariablen und des möglichen Prädiktors gibt Auschluss, bzw. einen Überblick über die zu erwartenden Werte. Es werden die Zielvariable und das Merkmal *calls* verglichen.
 
 ```{r}
 ggplot() + 
-  geom_density(data = ts_sby, aes(x = log(sby_need+1), fill = "red")) +
+  geom_density(data = ts_sby, aes(x = log(sby_need + 1), fill = "red")) +
   geom_density(data = ts_sby, aes(x = log(calls), fill = "blue"))
 ```
 
-erkannt: Masse bei den Werte 0-10
+bewertung
 
-kleine Gruppe an Werten von 418 bis 456 aus jedem Jahr =\> selber Tag? jährliche Veranstaltung?
-
-```{r}
-table(year(ts_sby[between(ts_sby$logscale,4,6),]$date))
-range(ts_sby$date)
-```
-
-nicht bewahrheitet
-
-? Quantillen als mögliche Anhaltepunkte für einen fixen "Sicherheitspolster" in der Vorhersage
+moving average um wochen saisonalität zu glätten
 
 ```{r}
+#| echo: true
+#| message: false
+#| warning: false
 
-dens <- ggplot(data = ts_sby, 
-               aes(x = sby_need, fill = as.factor(year(date)))) +
-  geom_density()
-ggplotly(dens)
-
-summary(ts_sby$sby_need)
-
-sum(table(ts_sby[ts_sby$sby_need <= 10,]$sby_need))/1152
-
-
-quantile(ts_sby$sby_need, probs = c(0.95, 0.90, 0.85, 0.8, 0.68))
-```
-
-Quantillen 68% und 75% 80% und 85%, wenige aber starke Ausreißer =\> logarithmische Skalierung um die Werte besser zu verteilen.
-
-```{r}
-
-ts_sby$logscale <- log(ts_sby$sby_need + 1)
-
-dens <- ggplot(data = ts_sby, 
-               aes(x = logscale, fill = as.factor(year(date)))) +
-  geom_density()
-ggplotly(dens)
-
-summary(ts_sby$logscale)
-
-quantile(ts_sby$logscale, probs = c(0.95, 0.90, 0.85, 0.8, 0.75, 0.68))
-
-
-```
-
-besser erkennbar in Grafik und "schöner" verteilt. Beschreibung der Grafik
-
-die Jahre 2016 und 2017 sind nahezu gleich, Änderungen vor allem in 2018 und im ersten Drittel 2019. Dennoch in allen Jahren eine mehr oder weniger ausgprägte "zweite Erhebung" zw. den Werten 4 und 6 erkennbar.
-
-Selbst wenn 50 als Fixwert mit Sicherheitsreserve (statt 0-Vorhersagen) gewählt wird, können täglich immer noch (90 - 50) \* 165 Euro (€6.600,-), nur anhand der explorativen Datenanalyse, eingespart werden und man hätte mit 80% Wahrscheinlichkeit immer noch genug StandBy-Personal. Wenn der Vorhersage-Algorithmus die restlichen 20% Ausreißer "findet", ist das Ziel erreicht.
-
-Algorithmen werden vermutlich mit log-Werten besser umgehen können, weil sich Ausreißer weniger Stark auswirken.
-
-```{r}
-p <- ts_sby %>%
+ts_sby <- ts_sby %>%
   mutate(
     MA8 = slider::slide_dbl(calls, mean,
-                            .before = 3, .after = 4, .complete = TRUE),
+                            .before = 3, .after = 4,
+                            .complete = TRUE),
     MA2_8 = slider::slide_dbl(MA8, mean,
-                                  .before = 1, .after = 0, .complete = TRUE)
-        ) %>%
-     #filter(date > "2018-01-01") %>%
+                              .before = 1, .after = 0,
+                              .complete = TRUE)
+        ) 
+
+p <- ts_sby %>%
   gg_season(MA2_8, period = "1y")
 
 ggplotly(p)
 ```
 
-am moving average von calls gut erkennbar, 2 saisonalitäten monatlich und jährlich, starker trend vor allem zu beginn 2019
+am moving average von calls gut erkennbar, 2 verbleibende saisonalitäten monatlich und jährlich, starker trend vor allem zu beginn 2019
+
 ```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| 
 ts_sby %>%
-    mutate(
-    MA8 = slider::slide_dbl(calls, mean,
-                            .before = 3, .after = 4, .complete = TRUE),
-    MA2_8 = slider::slide_dbl(MA8, mean,
-                                  .before = 1, .after = 0, .complete = TRUE)
-        ) %>%
-features_all(feat_spectral)
+  features(MA2_8,feat_spectral)
+```
+
+zielvariable
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+p <- ts_sby %>%
+  gg_season(sby_need, period = "1y") +
+  geom_smooth(level = 0.99)
+
+ggplotly(p)
+```
+
+Die Zeilvaribale *sby_need* zeichnet sich in dem Plot durch wiederkehrende, plötzliche Anstiege und eine anschließende Rückkehr zum Wert 0 aus. Diese Peaks scheinen schon ein Muster aufzuweisen, sind jedoch im Jahr 2019 deutlich stärker ausgeprägt und zeigen auch im Vergleich zwischen den Jahren immer wieder offsets zu einander. Auffallend sind vor allem auch der, fast durchgehend niedrige Bedarf jeweils von November bis Anfang März.
+Die smooth-curve bestätigt die höheren Werte von 2019, deckt aber, auch mit dem dargestelltenk 0.99 confidence level, die Peeks die ab. Die explizite Vorgabe "immer ausreichend" Bereitschaftspersonal vorzusehen" wird dadurch erschwert. 
+
+moving quantile
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby <- ts_sby %>%
+  mutate(
+    MQ7 = slider::slide_dbl(sby_need, 
+                            ~ quantile(x = .x,
+                                       probs = 0.99),
+                            .before = 3, .after = 3,
+                            .complete = TRUE))  
+
+p <- ts_sby %>%
+  gg_season(MQ7, period = "1y") +
+  geom_smooth(level = 0.99, se = FALSE)
+
+ggplotly(p)
+```
+
+## Decomposition
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+
+ts_sby %>%
+  filter(!is.na(MA2_8)) %>%
+  model(
+    STL(MA2_8 ~ 
+          trend(window = 365) +
+          season(period = "1 year", window = 540) + 
+          season(period = "1 month", window = 61))) %>%
+  components() %>%
+  autoplot()
+```
+
+Interpretation sieht gut aus. explorative analyse scheint sich in der decomposition zu bewahrheiten
+
+residuals
+
+# Untersuchung der linearen Korrelation zur Zielvariablen
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+require(ggpubr)
+
 ```
 
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+p <- ggplot(ts_sby, 
+            aes(x = calls,
+                y = sby_need,
+                colour = as.factor(year(date))
+                )) +
+  geom_point()
+
+ggplotly(p)
+```
+Die Linearität der Korrelation ist gut ersichttlich. Ebenso gut ersichtlich ist jedoch, dass diese stark vom Jahr der Daten abhängig ist. Nachdem 2018 und 2019 genauso wie bei dem Merkmal *n_duty* in ihrer Ausprägung gleich zu sehen sind, ist anzunehmen, dass hier ebenso eine Abhängigkeit zu n_duty vorliegt. Das war auch im Korrelationsplot daran zu erkennen, dass die Abstände zwischen den "drei Linearzusammenhängen" in der Variablen *reg_calls* (also durch *n_duty* modifizierte *calls*) enger beieinander lagen, aber noch nicht auf einer Linie. Um diesen Zusammenhängen in einem Modell und zukünftigen Trainings Rechnung zu tragen wird *n_duty* bei dem linearen Modell berücksichtigt werden müssen. Die Abstände im augenscheinlichen "Intercept" betragen zwischen den Jahren jeweils etwa 500 (2016: ~8.000 *calls*, 2017: ~8.500 *calls*, 2018 und 2019: ~9.000 *calls*). Das ist jeweils das fünffache des Anstiegs in *n_duty*.
+
+Wurden weniger Anrufe als der jeweilige "Intercept" getätigt wurde auch kein Bereitschaftspersonal aktiviert. Auch das wird in einem linearen Modell zu berücksichtigen sein.
+
+Die nachfolgende Grafik in dieser explorativen Analyse versucht auf Basis dieser Annahmen eine einfache Linearität herzustellen.
+
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Differenz der aktuellen n_duty zum Basiswert von 2016
+ts_sby$diff_nduty <- ts_sby$n_duty - 1700
+
+# Beobachteter Faktor für diese Differenz in der o.a. Korrelation
+faktor <- 5
+
+# Initialwert, ab wievielen Anrufen Bereitschaftspersonal zu aktivieren war
+initial <- 8150
+
+ggplot(ts_sby, 
+       aes(x = pmax(0,calls - (diff_nduty * faktor) - initial),
+           y = sby_need
+           )) +
+         geom_point() +
+  stat_smooth(method = "lm", se = TRUE) +
+  stat_regline_equation(label.x.npc = "center")
+
+```
+Das Modifizieren der Werte auf diese Weise scheint erfolgreich, hier ist die Differenzierung nach Jahren somit nicht mehr notwendig. Der abzuziehende Initialwert wie im o.a. Code beschrieben lieferte nach einigen Versuchen bei 8.150 eine gute Lineargleichung mit einem niedrigen aber positiven Intercept. 
+
+*n_duty* in ein Modell einzubeziehen sollte keiner weiteren Vorhersage bedürfen, da dieser Wert im Vorhinein bekannt ist. 
 
 # Fazit
 
+Der in der Merkmalsübersicht angesprochene zweite Ansatz zur Vorhersage von *sby_need* scheint aufgrund der explorativen Analyse am vielversprechensten. Bei diesem Ansatz wurde eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need* untersucht, wobei letztere jedoch "drei Liniaritäten" zeigt und  wahrscheinlich durch *n_duty* beeinflusst ist.
+
+Die Qualität dieses Ansatzes wird in der Modellerstellung geprüft. Es ist jedoch davon auszugehen, dass die lineare Korrelation von *sby_need* und *calls*, sowie die Saisonalität von *calls* auch im Baseline-Modell niederschlag finden.
+
 # Speichern aufbereiteter Daten
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
 
+save(ts_sby, file = "../00_sample_data/02_processed/data_explorative.rda")
+```
 
 # Literaturverzeichnis

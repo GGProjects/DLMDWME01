@@ -64,33 +64,6 @@ Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Ko
 #| warning: false
 
 load(file = "../../00_sample_data/02_processed/data_explorative.rda")
-
-```
-
-# Aufsplitten der Daten in Trianings- und Testdaten
-
-Vorhersagezeitraum etwa 2 Monate
-Datenzeitraum etwa drei Jahre (36 Monate)
-Übliche Aufsplittung 80:20 aber zumindest den Vorhersagezeitraum (ca. 29 Monate:7 Monate) Vorhersagezeitraum gegeben.
-Starker Aufwärtstrend von Anfang 2019 soll im Training aber noch mitgenommen werden, daher reduktion des Testdatensatzes auf 4 Monate (ab 2019-02-01)
-
-Durch moving average erzeugte NAs zu beginn und ende des Datensatzes gleich wegfiltern, damit später keine Fehler mehr daraus resultieren.
-
-Gleichzeitige Reduktion der Variablen in den Datensätzen
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-
-ts_sby_train <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date < "2019-03-01", !is.na(MA2_8))
-
-ts_sby_test <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date >= "2019-03-01", !is.na(MA2_8))
-
 ```
 
 ```{r}
@@ -98,15 +71,10 @@ ts_sby_test <- ts_sby %>%
 #| message: false
 #| warning: false
 
-# Beobachteter Faktor für diese Differenz in der o.a. Korrelation
-faktor <- 5
-
-# Initialwert, ab wievielen Anrufen Bereitschaftspersonal zu aktivieren war
-initial <- 8150
-
-ggplot(ts_sby_train, 
-       aes(x = pmax(0, calls - (diff_nduty * faktor) - initial),
-           y = sby_need
+ggplot(ts_sby, 
+       aes(x = pmax(0,(calls-9200)),
+           y = sby_need,
+           colour = as.factor(year(date))
            )) +
          geom_point() +
   stat_smooth(method = "lm", se = TRUE) +
@@ -114,19 +82,14 @@ ggplot(ts_sby_train,
 
 ```
 
-Lineare Korrelation auch im Trainingsdatensatz noch etwa gleich gegeben. 
-
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 
-lm_sby = lm(sby_need ~ pmax(0,calls - (diff_nduty * 5) - 8150), 
-            data = ts_sby_train)
+lm_sby = lm(sby_need ~ pmax(0,(calls - 9200)), data = filter(ts_sby, date >= "2018-01-01"))
 
 ```
-
-Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und warum die u.a. Wahl und die Combination
 
 ```{r}
 #| echo: true
@@ -136,15 +99,15 @@ Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und 
 # Training
 system.time(
   progressr::with_progress(
-    sby_basemodel <- ts_sby_train %>%
+    sby_basemodel <- ts_sby %>%
+      filter(date < "2018-12-01", !is.na(MA2_8)) %>%
       model(
-        snaive = SNAIVE(sby_need ~ lag(63), drift = TRUE),
-        drift = RW(sby_need ~ drift()),
-        mean = MEAN(sby_need ~ window(size = 63)),
-        ets = ETS(sby_need ~ trend(method = "A") + 
-                    season(method = "A")),
-        tslm = TSLM(sby_need ~ trend() + season()),
-        croston = CROSTON(sby_need)
+        snaive = SNAIVE(MA2_8, lag = 121),
+        #ets = ETS(MA2_8 ~ error("A") + trend("A") + season("M")),
+        drift = RW(MA2_8 ~ drift()),
+        #arima = ARIMA(MA2_8 ~ fourier(K = 3) + pdq()),
+        #tslm = TSLM(MA2_8 ~ trend() + season()),
+        mean = MEAN(MA2_8)
       ) 
   )
 )
@@ -159,7 +122,7 @@ system.time(
 system.time(
   progressr::with_progress(
     sby_basefc <- sby_basemodel %>%
-      forecast(h = "4 months", level = c(80))
+      forecast(h = "2 months", level = c(95))
   )
 )
 ```
@@ -169,45 +132,75 @@ system.time(
 #| message: false
 #| warning: false
 
-p <- sby_basefc %>%
-  autoplot(ts_sby_test,
-           level = c(80)) +
+p <- ts_sby %>%
+  filter(date >= "2018-12-01") %>%
+  autoplot(calls, colour = "red") +
+  autolayer(sby_basefc, alpha = 0.3) +
   labs(y = "Anrufe",
        title = "Vorhersage")
 
 ggplotly(p)
-p
+
 
 ```
+
 ```{r}
-# Monatsweise Aggregation deiner täglichen Daten (falls noch nicht erfolgt)
-ts_sby_week <- ts_sby %>%
-  index_by(week = ~ yearweek(.)) %>%
-  summarise(w_need = mean(MQ7)) %>%
-  filter(!is.na(w_need))
+#| echo: true
+#| message: false
+#| warning: false
 
-# Modell: Trend + monatsspezifischer saisonaler Effekt
-sby_basemodel <- ts_sby_week %>%
-  #filter_index("2019 W10" ~ .) %>%
-        model(
-        snaive = SNAIVE(w_need ~ lag(52), drift = TRUE),
-        drift = RW(w_need ~ drift()),
-        mean = MEAN(w_need ~ window(size = 52)),
-        tslm = TSLM(w_need ~ trend() + season()),
-        croston = CROSTON(w_need)
-      ) 
+# Training
+decomp_spec <- decomposition_model(
+  STL(calls ~ trend(window = 121) +
+          season(period = "1 year", window = 121)),
+  RW(season_adjust ~ drift())
+)
 
-# Prognose z. B. für 12 Monate
-sby_basefc <- forecast(sby_basemodel, h = "12 months")
-  
-p <- sby_basefc %>%
-  autoplot(ts_sby_week,
-           level = c(80)) +
+system.time(
+  progressr::with_progress(
+    sby_basemodel <- ts_sby %>%
+      filter(date < "2018-12-01") %>%
+      model(
+        stlf = decomp_spec,
+        snaive = SNAIVE(calls, lag = 121),
+        ets = ETS(calls ~ error("A") + trend("A") + season("A")),
+        drift = RW(calls ~ drift()),
+        arima = ARIMA(calls ~ fourier(K = 2))
+      )
+  )
+)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Vorhersage
+system.time(
+  progressr::with_progress(
+    sby_basefc <- sby_basemodel %>%
+      forecast(h = "2 years", level = c(95))
+  )
+)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+require(plotly)
+
+p <- ts_sby %>%
+  filter(date >= "2018-12-01") %>%
+  autoplot(calls, colour = "red") +
+  autolayer(sby_basefc, alpha = 0.3) +
   labs(y = "Anrufe",
        title = "Vorhersage")
 
 ggplotly(p)
-p
+
 
 ```
 
@@ -242,7 +235,7 @@ aug %>% features(.innov, ljung_box, lag = 121)
 #| warning: false
 
 
-mod <- select(sby_basemodel, drift) 
+mod <- select(sby_basemodel, stlf) 
 gg_tsresiduals(mod)
 
 ```
@@ -257,23 +250,6 @@ sby_basefc %>%
     list(qs = quantile_score), probs = 0.99
     )
 ```
-
-# sby_need prediction
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-
-call_pred <- sby_basefc %>%
-  filter(.model == "tslm") %>%
-  as.tibble() %>%
-  select(date, calls = .mean) %>%
-  mutate(diff_nduty = 200) %>%
-  as_tsibble(index = date)
-```
-
-
 
 ```{r}
 #| echo: true
@@ -298,3 +274,110 @@ ggplotly(p)
   
 ```
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+#install.packages("fable.prophet")
+require(fable.prophet)
+
+# Training
+decomp_spec <- decomposition_model(
+  STL(calls ~ trend(window = 121) +
+          season(period = "1 year", window = 121)),
+  RW(season_adjust ~ drift())
+)
+
+system.time(
+  progressr::with_progress(
+    sby_prophet <- ts_sby %>%
+      filter(date <= "2018-12-01") %>%
+      model(
+        #stlf = decomp_spec,
+        prophet = prophet(calls ~ growth("linear", changepoint_prior_scale = 0.8) +
+                            season(period = 7, order = 15, type = "additive") +
+                            season(period = 28, order = 10, type = "additive") +
+                            #season(period = 93, order = 10, type = "additive") +
+                            #season(period = 181, order = 7, type = "additive") +
+                            season(period = "year", order = 5, type = "multiplicative")
+                            )
+      )
+  )
+)
+
+sby_prophet %>%
+  components() %>%
+  autoplot()
+
+sby_prophet %>%
+  gg_tsresiduals()
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Vorhersage
+system.time(
+  progressr::with_progress(
+    sby_prophetfc <- sby_prophet %>%
+      forecast(h = "2 years")
+  )
+)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+require(plotly)
+
+p <- ts_sby %>%
+  filter(date >= "2018-12-01") %>%
+  autoplot(calls, colour = "black") +
+  autolayer(sby_prophetfc, alpha = 0.3) +
+  labs(y = "Anrufe",
+       title = "Vorhersage")
+
+ggplotly(p)
+
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+call_pred <- sby_basefc %>%
+  filter(.model == "stlf") %>%
+  as.tibble() %>%
+  select(date, calls = .mean) %>%
+  as_tsibble(index = date)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+call_pred <- sby_prophetfc %>%
+  filter(.model == "prophet") %>%
+  as.tibble() %>%
+  mutate(newcalls = pmax(0,.mean-8100)) %>%
+  select(date, calls = .mean) %>%
+  as_tsibble(index = date)
+
+sby_pred <- predict(lm_sby, call_pred, interval = "prediction")
+call_pred$sby <- pmax(0,sby_pred[,1])
+
+p <- ggplot() +
+  geom_line(data = ts_sby, aes(x = date, y = sby_need)) +
+  geom_line(data = call_pred, aes(x = date, y = sby, colour = "red"))
+
+ggplotly(p)
+```
