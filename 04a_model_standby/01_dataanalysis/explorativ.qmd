@@ -5,11 +5,13 @@ editor: visual
 bibliography: references.bib
 ---
 
+## Einleitung
+
 Dieses Dokument beschreibt die vorbereitenden Abschnitte **Prüfung der Datenqualität** und **Explorative Datenanalyse** für den bestehenden Use Case. Ziel der exporativen Analyse ist dabei auch das Finden eines möglichen Ansatzes für die Vorhersage und die damit einhergehende Modifikation und Aufbereitung der Daten. Die Modellierungen selbst werden in den jeweiligen Modellverzeichnissen behandelt.
 
-# Prüfung der Datenqualität
+## Prüfung der Datenqualität
 
-## Datensätze einlesen
+### Datensätze einlesen
 
 Die Daten werden in zwei Dateien bereitgestellt: ***sickness_table.csv*** und ***sickness_table.xlsx***. Augenscheinlich handelt es sich dabei um den selben Datensatz,was jedoch eingangs noch zu überprüfen ist.
 
@@ -38,7 +40,7 @@ sickness_xls <- read_excel(paste0(path_to_samples,"01_raw/sickness_table.xlsx"),
 head(sickness_xls)
 ```
 
-## Datensätze vergleichen
+### Datensätze vergleichen
 
 ```{r}
 #| echo: true
@@ -50,9 +52,9 @@ identical(sickness_csv, sickness_xls)
 
 Die Überprüfung mittels *identical* besagt, dass die Datensätze nich identisch sind. Die in den jeweiligen Daten-Dictionaries beschriebenen Datenstrukturen lassen jedoch schon darauf schließen. Eine Summary der Wertebereiche der vorliegenden Daten schafft mehr Klarheit.
 
-## Daten Summary
+### Daten Summary
 
-### sickness_csv
+#### sickness_csv
 
 ```{r}
 #| echo: true
@@ -62,7 +64,7 @@ Die Überprüfung mittels *identical* besagt, dass die Datensätze nich identisc
 summary(sickness_csv)
 ```
 
-### sickness_xls
+#### sickness_xls
 
 ```{r}
 #| echo: true
@@ -74,7 +76,7 @@ summary(sickness_xls)
 
 Gemäß den angezeigten Wertebereichen handelt es sich tatsächlich um die gleichen Datensätze. Anhand der .csv Datei wird noch überprüft ob der Datensatz fehlende Werte beinhaltet, bevor mit der weiteren Datenexploration fortgefahren wird.
 
-## NAs und "Missing Values"
+### NAs und "Missing Values"
 
 ```{r}
 #| echo: true
@@ -92,7 +94,7 @@ if (!anyNA.data.frame(sickness_csv)) print("no missing values") else print("you 
 
 In dieser Zeitreihe müssen weder mit fehlenden Zeitwerten noch NAs in den Datenpunkten behandelt werden. Die Prüfung der Datenqualität wird somit abgeschlossen.
 
-## Zusammenfassung
+### Zusammenfassung
 
 1.  Die bereitgestellten Datensätze scheinen identisch zu sein. Es wird nur mit der .csv Datei weitergearbeitet.
 
@@ -111,7 +113,7 @@ rm(sickness_xls,
 4.  Die Zeitreihe behandelt den Zeitraum von 2016-04-01 bis 2019-05-27. Eine Periode von drei Jahren vor der COVID Pandemie. Es ist davon auszugehen, dass COVID die aktuellen Zahlen verändert hat. Denoch hilft eine erfolgreiche Umsetzung einer Vorhersage auf den Testdaten, das Projekt mit aktuellen Daten voranzutreiben und zukünftig Bereitschaftskosten sparen zu können.
 5.  Die Anzahl der Anrufe und die Anzahl des krankgemeldeten Personals scheint ähnliche Proportionen aufzuweisen, nur um etwa den Faktor 100 kleiner.
 
-# Explorative Datenanalyse
+## Explorative Datenanalyse
 
 ```{r}
 #| label: load packages
@@ -129,7 +131,7 @@ require(ggpubr)
 
 Ein weiteres R-Package, das gute Werkzeuge für die explorative Analyse aber auch für die Erstellung von Models anbietet ist *caret*. Das Paket eignet sich zwar weniger gut für Zeitreihendaten, aus der Dokumentation alleine kann aber bereits viel gelernt werden. [@kuhn_caret_2019].
 
-## Visualisierung der Zielvariable
+### Visualisierung der Zielvariable
 
 Die Aufgabenstellung liegt in der Vorhersage des bereitzuhaltenden Bereitschaftspersonals auf Basis einer vermuteten Saisonalität im historischen Bedarf. Die Zielvariable für diese Vorhersage ist daher *sby_need*, die das tatsächlich benötigte Bereitschaftspersonal pro Tag ausdrückt. Die u.a. Darstellung der Zielvariablen gibt einen ersten Eindruck über deren Ausprägung und mögliche Herausforderungen. Um das R-Package *fpp3* für Forcasting in Zeitreihen zu verwenden, wird der Datensatz vorerst in ein entsprechendes Objekt konvertiert. Hierbei werden auch die erste Spalte (*id*), die bisher konstante Einteilung des Bereitschaftspersonals (*n_sby*), sowie die Anzahl der zusätzlich benötigten Fahrer:innen (*dafted*) entfernt.
 
@@ -183,7 +185,7 @@ ts_sby %>%
 
 Wie bereits zuvor erläutert, sieht man auch in der Dichtefunktion des logarithmisch dargestellten Wertes von *sby_need* den Wechsel zwischem geringen und sehr hohem Bedarf. Eine Normalverteilung liegt logischerweise nicht vor, da der Modus zwar bei 0 zu liegen scheint, ein negativer Wert aber freilicherweise nicht vorkommen kann. Sieht man von der Häufung zum den Wert 0 ab, erkennt man eine zweite kleinere Akkumulation von Werten zwischen grob 3.5 und 6.5. Auch hier zieht das Jahr 2019 die Werte wieder etwas nach oben. In nicht logarithmische ausgedrückten Werten wäre das zwischen ca. 33 und 665 Fahrer:innen, die bereitgehalten werden müssen. Man könnte argumentieren, dass ein Vorhalten von 0 Standby-Fahrer:innen unrealistisch ist und aus dieser Darstellung bereits einen Mindestwert von ca. 35 Personen in Bereitschaft ableiten. Kostenmäßig wäre dies bereits eine Ersparnis gegenüber den derzeit 90 vorgehaltenen Bereitschaftsfahrenden. Die Herausforderung liegt abermals in der treffsicheren Vorhersage der, in augenscheinlich monatlichen Abständen auftretenden, Spitzenwerte.
 
-## Autokorrelation der Zielvariable
+### Autokorrelation der Zielvariable
 
 Die Autokorrelation der Zielvariable (s.u.) zeigt, neben der erwarteten monatlichen Korrelation in den *lags* 28 bis 33, auch wöchentliche Peeks Die rasche Abnahme der Korrelation zu Beginn des Plots lässt auf einen nur schwach ausgeprägten Trend in den Werten schließen, vmtl. da dieser augenscheinlich erst mit 2019 auftritt. Ab *lag* 63 zeigt die Autokorrelation teils negative Werte und wird daher mehr oder weniger unbrauchbar.
 
@@ -198,7 +200,7 @@ ts_sby %>%
   labs(title = "Autokorrelation von sby_need")
 ```
 
-## Übersicht über die weiteren Datenmerkmale
+### Übersicht über die weiteren Datenmerkmale
 
 ```{r}
 #| echo: true
@@ -225,7 +227,7 @@ Für die Vorhersage des Merkmals *sby_need* gibt es zu diesem Zeitpunkt daher f�
 
 Die weitere Analyse konzentriert sich daher auf die ursprünglichen Merkmale *date*, *sby_need* und *calls* sowie auf die neu generierten Variablen.
 
-## Merkmalsgenerierung
+### Merkmalsgenerierung
 
 Die in Punkt 4. beschriebene kombinierte Variable *calls_sick* aus *calls* und *n_sick* wird als Anrufe je krankgemeldetem/r Einsatzfahr:in verstanden und daher berechnet als
 
@@ -310,6 +312,7 @@ Um festzustellen welcher Ansatz möglicherweise erfolgversprechender ist, lohnt 
 #| echo: true
 #| message: false
 #| warning: false
+#| paged-print: false
 
 ts_sby %>%
   select(-c("n_duty")) %>%
@@ -318,7 +321,7 @@ ts_sby %>%
 
 Interessanterweise, ist trotz einer augenscheinlich gut erkennbaren Saisonalität der Entropie-Wert durchgehend relativ hoch. Am ehesten scheint sich an dieser Stelle das unregulierte Merkmal der Notfallanrufe (*calls*) für eine saisonal-bedingte Vorhersage zu eignen. Dieses Merkmal scheint annähernd normalverteilt zu sein und die Korrelation zur Zielvariablen *sby_need* liegt nur leicht unter dem regulierten Wert *reg_calls*. *calls_sick* und *reg_calls_sick* schneiden bei der Betrachtung der letzten beiden Faktoren deutlich schlechter ab.
 
-## Untersuchung des Merkmals "calls"
+### Untersuchung des Merkmals "calls"
 
 Der Autokorrelationsplot der Variablen *calls* soll weiteren Aufschluss über dieses Merkmal geben. Hierfür werden 93 lags, also etwa drei Monate betrachtet.
 
@@ -400,7 +403,7 @@ ts_sby %>%
 
 Auch die spektrale Entropy des Merkmals wird durch den gleitenden Durchschnitt deutlich verbessert. Wie sehr darunter die Tauglichkeit als Prädiktor leidet, wird in der Modellerstellung zu evaluieren sein.
 
-### Decomposition von calls
+#### Decomposition von calls
 
 ```{r}
 #| echo: true
@@ -421,13 +424,13 @@ ts_sby %>%
 
 Mit Hilfe der Methode "Seasonal and Trend decomposition using Loess" (STL), zeigt eine erste Dekomposition des Merkmals die besprochenen Komponenten. Der Trend ist nahezu linear, und die monatliche Saisonalität regelmäßig. In der Jährlichen Saisonalität scheint noch ein modifizierender Teil der Monatsperioden enthalten zu sein. Augenscheinlich könnte auch im *remainder*, dem Restanteil, noch eine Periodizität herauszuarbeiten sein. Dies wird jedoch ggf. die Aufgabe einer Modellerstellung.
 
-# Fazit
+## Fazit
 
 Der in der Merkmalsübersicht angesprochene zweite Ansatz zur Vorhersage von *sby_need* scheint aufgrund der explorativen Analyse am vielversprechensten. Bei diesem Ansatz wurde eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need* untersucht, wobei letztere bewiesen durch *n_duty* beeinflusst ist. Die Qualität dieses Ansatzes wird in der Modellerstellung geprüft.
 
 Für ein Benchmarking mit einem einfachen Baselinemodel kann möglicherweise auf Basis der Zielvariablen eine brauchbare Lösung gefunden werden,
 
-## Speichern aufbereiteter Daten
+### Speichern aufbereiteter Daten
 
 ```{r}
 #| echo: true
@@ -437,4 +440,12 @@ Für ein Benchmarking mit einem einfachen Baselinemodel kann möglicherweise auf
 save(ts_sby, file = "../00_sample_data/02_processed/data_explorative.rda")
 ```
 
-# Literaturverzeichnis
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+rm(list = ls()) # nach Durchlauf alles löschen
+```
+
+## Literaturverzeichnis

@@ -14,49 +14,43 @@ bibliography: references.bib
 require(dplyr)
 require(fpp3)
 require(plotly)
-require(ggpubr)
 ```
 
-## Prämisse
+## Einleitung
 
-### Use Case Analyse {#sec-use-case-analyse}
+Dieses Dokument beschreibt die Erarbeitung eines Baseline- oder Benchmarkmodel. Diese Modell dient der Anwendung einer simplen Lernmethode auf die gegebene Aufgabenstellung. Die Ergebnisse dieses Modells werden in weiterer Folge zur Qualitätsmessung und Evaluierung von ausgefeilteren Modells verwendet.
 
-In der vorausgegangenen Use Case Analyse [@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
+@hyndman_forecasting_2021 schlägt für die Erstellung von Benchmarks im Zeitreihenbereich die Algorithmen
 
-In der Use Case Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
+-   **Mean**: Der Mittelwert der Zeitreihe
+-   **Naïve**: Der Wert der letzten Observation
+-   **Seasonal Naïve**: Der Wert der letzten gleichen Saison zB das gleiche Monat des Vorjahres, oder der gleiche Tag des Vormonats (abhängig von der Saisonalität)
+-   **Drift**: Eine Variation von Naïve, die die durchschnittliche Veränderungsrate der Daten berücksichtigt und somit auch steigen oder fallen kann
 
-**SARIMA** (Seasonal Autoregressive Integrated Moving Average) stellt dabei ein klassisches Modell für saisonale Zeitreihenanalysen dar. **Facebook Prophet** wurde ebenso für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
+Im R-package *fpp3* ist außerdem auch ein **TSLM** Algorithmus enthalten, der ein Lineares Modell mit Trend- und saisonalen Komponenten auf die Daten anwendet. Dieser  Algorithmus könnte sich in diesem Anwenungsfall auch gut für ein Baselinemodel eignen. 
 
-Eine weitere, sehr "schlanke", aber nicht so fein skalierbare Methode für die Vorhersage saisonaler Daten stellt **SNAIVE** (Seasonal Naive Model) dar. Dieser Algorithmus .... eignet sich daher für ein Baseline Model ...
+Nachdem die Modelle wenig Rechenkapazität benötigen, bietet es sich an, einfach alle Modelle zu trainieren und anschließend die, für diese Aufgabe gültige Benchmark zu wählen. Außerdem gibt die aktuelle Vorgehensweise, nämlich ein konstantes Vorhalten von 90 Bereitschaftsfahrenden ebenso bereits eine zu berücksichtigende Messvariable vor, schließlich sollen ja langfristig Bereitschaftskosten durch die Anwendung eines Modell gespart werden können.
 
-Auf Basis des DRK-Reformtarifvertrags [@deutsches_rotes_kreuz_drk-reformtarifvertrag_2023] wurde geschätzt, dass ein Tag mit, bisher fix eingeteilten, 90 Bereitschaftsfahrer:innen etwa €14.850,- kostet (€165,- pro Bereitschaftsfahrer:in), die an vielen Tagen gar nicht abgerufen werden. Diese Kosten können gut als Messwerte in eine Kostenfunktion für die Güte des Modells integriert werden. Ein deutlich höherer Strafbetrag für eine zu niedrige Schätzung soll den Anforderungen des K.O.-Kriteriums entsprechen, nie zu wenig Bereitschaftspersonal vorzusehen.
+## Ergebnisse der explorativen Datenanalyse
 
-### Explorative Datenanalyse
+Die Erkenntnisse der explorativen Datenanalyse liefern eine Grundlage für die Erstellung eines Baseline Models und lassen sich in Bezug auf die Zielvariable wie folgt zusammenfassen:
 
-Die Erkenntnisse der explorativen Datenanalyse bieten eine weitere Basis für die Erstellung eines Baseline Models und lassen sich wie folgt zusammenfassen:
+1.  Die vermutete Saisonalität ist augenscheinlich gegeben, der rasche Wechsel zwischen sehr hohem und fast keinem Bedarf an Bereitschaftspersonal könnten eine Vorhersage erschweren. Ab 2019 ändert sich das saisonale Verhalten der Daten und auch ein durchschnittlicher Anstieg in den Werten der Zielvariablen ist zu beobachten.
 
-1.  Beim Bedarf an StandBy-Personal wurde über die Jahre ein positiver Trend mit einem starken Anstieg seit Beginn des Jahres 2019 beobachtet.
-2.  Ebenso wurde eine
-    1.  starke wochenweise Saisonalität mit Perioden zw. 3-5 Wochen,
-    2.  eine Abhängigkeit zum Tag im Monat mit einem starken Abwärtstrend zu Beginn jeden Monats und Periodenlängen von etwa drei Tagen,
-    3.  sowie eine schwächer ausgeprägte monatliche Saisonalität festgestellt.
-3.  Es wurde außerdem festgehalten, dass eine Abhängigkeit des Bedarfs an StandBy-Personal von der Anzahl krankgemeldeter Bereitschaftsfahrer:innen und der Anzahl eingehender Notrufe plausibel scheint. In der wochenweisen Aggregation der Daten bestätigte das neu entstandene Merkmal call_per_sick (eine Division der Anzahl der Notrufe durch die Anzahl der Krankmeldungen) diese Annahme. Dies wurde vor allem in der logarithmischen Darstellung der Daten ersichtlich.
+2.  Eine lineare Annäherung in der Ansicht, die sogenannte Smooth-Curve, zeigt, dass die Spitzenwerte auch mit einem 99% Konfidenzinterwall nicht abgedeckt werden.
 
-Die möglichen Prediktoren aus dem letzten Punkt müssten für eine Verwendung als solche selbst erst einzeln vorhergesagt und danach zusammengeführt werden. Ein direktes Lernen der zeitlichen Muster der abhängigen Variable scheint an dieser Stelle für ein Baseline Model effizienter. Die ersten beiden Punkte weisen auf eine Kombination aus Trends und unterschiedlichen Saisonalitäten hin, die in einer Vorhersage berücksichtigt werden muss. Die Verwendung von dem oben beschriebenen Facebook Prophet Alorithmus für ein Baseline Model scheint den Anforderungen zu entsprechen.
+3.  Ein Mindestmaß an etwa 35 Personen in Bereitschaft sinnvoll ist.
 
-## Baseline Model mit SNAIVE
+4.  Ebenso wurde eine jährliche und (instabile) monatliche Saisonalität mit schwacher ausgeprägten wöchentlichen Perioden erkannt. Die Autokorrelation zeigt, dass eine Vorhersage über einen längeren Zeitraum nicht zielführend ist. Das wird vmtl. über die Änderungen im Muster ab Beginn 2019 erklärt werden können.
+    
+5. Es wurde außerdem festgehalten, dass eine nahezu lineare Abhängigkeit des Bedarfs an StandBy-Personal zu der Anzahl eingehender Notrufe besteht, diese jedoch auch vom diensthabenden Personal beeinflusst wird.
 
-SNAIVE und fable
+Am erfolgversprechensten wurde eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need* beurteilt, wobei Letztere durch *n_duty* beeinflusst ist. 
 
-## Baseline Models
+Für ein Baselinemodel scheint der obige Ansatz jedoch zu aufwendig. Deshalb wird dieses direkt auf die Zielvariable trainiert. Um den oben genannten Herausforderungen in der Vorhersage zu begegnen, wird jedoch noch eine weitere Vorverarbeitung der Daten nötig sein. 
 
-Buchreferenz, Auswahl
 
-### Kostenfunktion
-
-Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedrige Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
-
-# Daten laden
+## Daten laden
 
 ```{r}
 #| echo: true
@@ -67,16 +61,11 @@ load(file = "../../00_sample_data/02_processed/data_explorative.rda")
 
 ```
 
-# Aufsplitten der Daten in Trianings- und Testdaten
+## Aufsplitten der Daten in Trianings- und Testdaten
 
-Vorhersagezeitraum etwa 2 Monate
-Datenzeitraum etwa drei Jahre (36 Monate)
-Übliche Aufsplittung 80:20 aber zumindest den Vorhersagezeitraum (ca. 29 Monate:7 Monate) Vorhersagezeitraum gegeben.
-Starker Aufwärtstrend von Anfang 2019 soll im Training aber noch mitgenommen werden, daher reduktion des Testdatensatzes auf 4 Monate (ab 2019-02-01)
+Gemäß Aufgabe soll der Vorhersagezeitraum etwa 2 Monate betragen. Der Zeitraum, der durch das Datenmaterial abgedeckt wird, umfasst etwa drei Jahre (36 Monate). Üblliche Aufteilungen von Datensätzen in Trainings- und Testdaten, sehen ein Verhältnis von 70:30 oder 80:20 Prozent vor (je nach Größe des Datensatzes), der Umfang des gewünschten Vorhersagezeitraums sollte aber jedenfalls gegeben sein. Ein Verhältnis von 80:20 entspricht bei den vorliegenden Daten etwa 29 Monate:7 Monate. Der Vorhersagezeitraum wäre damit abgedeckt. Die, in der explorativen Datenanalyse festgestellte Änderung des saisonalen Verhaltens mit dem Jahreswechsel auf 2019 sowie ein deutlich schlechterer Autokorrelationswert ab lag 63 müssen in den Trainingsdaten umbedingt berücksichtigt werden. Daher wird der Testtdatensatz auf 2 Monate reduziert.
 
-Durch moving average erzeugte NAs zu beginn und ende des Datensatzes gleich wegfiltern, damit später keine Fehler mehr daraus resultieren.
-
-Gleichzeitige Reduktion der Variablen in den Datensätzen
+Die Anzahl der Variablen wird gleichhzeitig ebenfalls auf ein benötigtes Mindestmaß beschränkt.
 
 ```{r}
 #| echo: true
@@ -84,49 +73,27 @@ Gleichzeitige Reduktion der Variablen in den Datensätzen
 #| warning: false
 
 ts_sby_train <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date < "2019-03-01", !is.na(MA2_8), !is.na(MQ7))
+  select(date, sby_need) %>%
+  slice((n() - 62):0)
+
+# Zeitraum Trainingsdatensatz
+range(ts_sby_train$date)
+
 
 ts_sby_test <- ts_sby %>%
-  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
-  filter(date >= "2019-03-01", !is.na(MA2_8), !is.na(MQ7))
+  select(date, sby_need) %>%
+  slice(n():(n() - 61))
+
+# Zeitraum Testdatensatz
+range(ts_sby_test$date)
 
 ```
 
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
+## Modelerstellung
 
-# Beobachteter Faktor für diese Differenz in der o.a. Korrelation
-faktor <- 5
+### Erster Versuch
 
-# Initialwert, ab wievielen Anrufen Bereitschaftspersonal zu aktivieren war
-initial <- 8150
-
-ggplot(ts_sby_train, 
-       aes(x = pmax(0, calls - (diff_nduty * faktor) - initial),
-           y = sby_need
-           )) +
-         geom_point() +
-  stat_smooth(method = "lm", se = TRUE) +
-  stat_regline_equation(label.x.npc = "center")
-
-```
-
-Lineare Korrelation auch im Trainingsdatensatz noch etwa gleich gegeben. Der beschriebene Initialwert von 8.150 liefert eine gute Lineargleichung mit einem niedrigen aber positiven Intercept.
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-
-lm_sby = lm(sby_need ~ pmax(0,calls - (diff_nduty * 5) - 8150), 
-            data = ts_sby_train)
-
-```
-
-Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und warum die u.a. Wahl und die Combination
+Der erste Versuch der Modellerstellung wendet die beschriebenen Benchmarkmodelle, trotz der erkannten Herausforderungen, direkt auf die Zielvariable an, um zu sehen, wie sich die Berechnungen verhalten. Ein brauchbares Ergebnis wird an dieser Stelle nicht erwartet. Um die monatlichen saisonalen Muster einzufangen, aber die Änderungen zu Beginn des Jahres 2019 hervorzuheben, wird der Trainingszeitraum weiter auf ein Jahr beschränkt.
 
 ```{r}
 #| echo: true
@@ -134,20 +101,21 @@ Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und 
 #| warning: false
 
 # Training
-system.time(
+t <- system.time(
   progressr::with_progress(
     sby_basemodel <- ts_sby_train %>%
+      filter(date >= "2018-03-26") %>%
       model(
+        mean = MEAN(sby_need),
+        naive = NAIVE(sby_need),
         snaive = SNAIVE(sby_need ~ lag(63), drift = TRUE),
         drift = RW(sby_need ~ drift()),
-        mean = MEAN(sby_need ~ window(size = 63)),
-        ets = ETS(sby_need ~ trend(method = "A") + 
-                    season(method = "A")),
         tslm = TSLM(sby_need ~ trend() + season()),
-        croston = CROSTON(sby_need)
       ) 
-  )
+  ),  gcFirst = TRUE
 )
+
+print(paste0(" Die Benötigte Zeit für das Training betrug ", round(t[3],2), " Sekunden."))
 ```
 
 ```{r}
@@ -156,12 +124,14 @@ system.time(
 #| warning: false
 
 # Vorhersage
-system.time(
+t <- system.time(
   progressr::with_progress(
     sby_basefc <- sby_basemodel %>%
-      forecast(h = "4 months", level = c(80))
-  )
+      forecast(h = "2 months", level = c(80))
+  ), gcFirst = TRUE
 )
+
+print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " Sekunden."))
 ```
 
 ```{r}
@@ -172,14 +142,29 @@ system.time(
 p <- sby_basefc %>%
   autoplot(ts_sby_test,
            level = c(80)) +
-  labs(y = "Anrufe",
-       title = "Vorhersage")
+  autolayer(ts_sby_train %>% filter(date >= "2019-03-01"), colour = "red" ) +
+  labs(y = "sby_need",
+       title = "Baseline, erster Versuch")
 
-ggplotly(p)
-p
-
+ggplotly(p, tooltip = c("y", "x", "colour"))
 ```
-# moving quantile
+
+In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert.
+Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen negativen Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 0). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
+
+*TSLM* erkennt wochenweise Schwankungen (wie auch im Autokorrelationsplot beobachtet), setzt diese allerdings viel zu gleichmäßig und vor allem zu niedrig an. *Snaïve* kann offenbar den rapiden Wechsel zwischen 0 und auftretenden Spitzen modellieren. Setzt diese Spitzen allerdings zu niedrig an und, viel fataler, nicht dort wo sie tatsächlich auftreten. 
+
+Positiv hervorzuheben ist die benötigte Zeit für Training und Vorhersage. Diese betrug hier nur wenige hunderstel Sekunden. Der dazu verwendete Rechner war ein  älteres Notebook vom Typ: Dell Latitude 5490, Intel i7 vPro (8th Gerneration) mit 16 Gb RAM. 
+
+Die Berechnung der Modelle auf neueren Systemen sollte die Hardware demnach nicht vor große Herausforderungen stellen.
+
+### Zweiter Versuch mit modifizierten Daten
+
+Der Vorhersageplot des ersten Verusches zeigt gut dessen Scheitern. Die hohen Ausschläge zu Beginn jedes Monats werden nicht durch die Modelle abgedeckt, die Peaks sind aber gleichzeitig auch zu unregeläßig um zB von einem *Snaïve*-Model "getroffen" zu werden. *TSLM* lässt schönt die wöchentliche Komponente in den Daten erkennen, die aber eigentlich nur schwach ausgeprägt ist. 
+
+Die Idee für den zweiten Versuch eines Benchmarkmodels ist es, die rapiden Wechsel zwischen Spitzen und 0-Linie zu entfernen, die ensprechende Höhe des möglichen Bedarfes abzudecken und durch Aggregation die "Treffsicherheit" für auftretenden Bedarf zu erhöhen. Auf die intra-wöchentlichen Schwankungen wird keine Rücksicht mehr genommen. 
+
+Dazu bietet sich, wie auch in der explorativen Datenanalyse, die Verwendung eines gleitenden Durchschnitts an, um den Wochenbedarf zu glätten. Das Problem der Durchschnittsbildung ist jedoch, dass die Spitzen "per design" nie richtig vorhergesagt werden können. Als gleitendes Maß wird in diesem Fall daher die 99% Quantile mit einem Fenster von sieben Tagen getestet.
 
 ```{r}
 #| echo: true
@@ -194,12 +179,15 @@ ts_sby <- ts_sby %>%
                             .before = 3, .after = 3,
                             .complete = TRUE))  
 
-p <- ts_sby %>%
+ts_sby %>%
   gg_season(MQ7, period = "1y") +
-  geom_smooth(level = 0.99, se = TRUE)
+    labs(title = "Gleitende Quantille")
 
-ggplotly(p)
+
+
 ```
+
+Im saisonalen Plot sieht man, dass die Spitzenwerte, durch die Glättung, deutlich besser übereinander liegen und auch die monatliche Komponente der Saisonalität ist gut erkennbar. Der u.a. Wert der spektralen Entropy hat sich gegenüber jenem der Zielvariablen, in der explorativen Datenanalyse merkbar verbessert.
 
 ```{r}
 #| echo: true
@@ -209,65 +197,94 @@ ggplotly(p)
 ts_sby %>%
   features(MQ7,feat_spectral)
 ```
-
+Die Treffsicherheit des Baselinemodells soll weiters durch eine wochenweise Aggregation erhöht werden. Das bedeutet in der Praxis, dass jeweils für eine ganze Woche die selbe Anzahl an Bereitschaftspersonal vorzuhalten wäre, da nicht genau bestimmt werden kann, wann genau der Spitzenbedarf auftreten wird. Nach der Aggregation werden ein neuer Trainings und Testdatensatz gebildet und die Modelle trainiert.
 
 ```{r}
-# Monatsweise Aggregation deiner täglichen Daten (falls noch nicht erfolgt)
+#| message: false
+#| warning: false
+
+# Aggregation der täglichen Daten
 ts_sby_week <- ts_sby %>%
+  filter(!is.na(MQ7)) %>%
   index_by(week = ~ yearweek(.)) %>%
-  summarise(w_need = mean(MQ7)) %>%
+  summarise(w_need = max(MQ7)) %>%
   filter(!is.na(w_need))
 
-# Modell: Trend + monatsspezifischer saisonaler Effekt
-sby_basemodel <- ts_sby_week %>%
-  #filter_index("2019 W10" ~ .) %>%
-        model(
+# Datenaufteilung
+ts_sby_train <- ts_sby_week %>%
+  select(week, w_need) %>%
+  slice((n() - 9):0)
+
+# Zeitraum Trainingsdatensatz
+range(ts_sby_train$week)
+
+
+ts_sby_test <- ts_sby_week %>%
+  select(week, w_need) %>%
+  slice(n():(n() - 9))
+
+# Zeitraum Testdatensatz
+range(ts_sby_test$week)
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Training
+t <- system.time(
+  progressr::with_progress(
+    sby_basemodel <- ts_sby_train %>%
+      filter(year(week) >= 2017) %>%
+      model(
+        mean = MEAN(w_need),
+        naive = NAIVE(w_need),
         snaive = SNAIVE(w_need ~ lag(52), drift = TRUE),
         drift = RW(w_need ~ drift()),
-        mean = MEAN(w_need ~ window(size = 52)),
         tslm = TSLM(w_need ~ trend() + season()),
-        croston = CROSTON(w_need)
       ) 
+  ),  gcFirst = TRUE
+)
 
-# Prognose z. B. für 12 Monate
-sby_basefc <- forecast(sby_basemodel, h = "12 months")
-  
+print(paste0(" Die Benötigte Zeit für das Training betrug ", round(t[3],2), " Sekunden."))
+
+
+# Vorhersage
+t <- system.time(
+  progressr::with_progress(
+    sby_basefc <- sby_basemodel %>%
+      forecast(h = "12 months", level = c(99))
+  ), gcFirst = TRUE
+)
+
+print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " Sekunden."))
+
+
+# Visualisierung der Vorhersage  
+
 p <- sby_basefc %>%
-  autoplot(ts_sby_week,
-           level = c(80)) +
-  labs(y = "Anrufe",
-       title = "Vorhersage")
+  autoplot(ts_sby_test,
+           level = c(99)) +
+  autolayer(ts_sby_train %>% filter(year(week) >= 2018), colour = "red" ) +
+  labs(y = "sby_need",
+       title = "Baseline, erster Versuch")
 
-ggplotly(p)
+ggplotly(p, tooltip = c("y", "x", "colour"))
 p
-
-```
-In Baseline reicht der MQ7 ansatz
-
-# Evaluierung
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-
-aug <- augment(sby_basemodel)
-
-p <- ggplot(aug, aes(x = .innov, fill = .model)) +
-  geom_histogram()
-
-ggplotly(p)
-
-
 ```
 
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
+Nachdem im Saisonalitätsplot ein Aufwärtstrend klar erkennbar ist, wurde der Trainingszeitraum auf zwei etwa zwei Jahre und der Vorhersagezeitraum auf ein Jahr erweitert. Die Berechnungszeit für das Training und die Vorhersage kann auch bei diesem Ansatz vernachlässigt werden. 
 
-aug %>% features(.innov, ljung_box, lag = 121)
-```
+Der o.a. Plot folgt dem Farbschema des vorigen Vorhersageplots. Die unterschiedlichen Qualitäten der Vorhersagen sind gut erkennbar. *Drift* und *Naïve* können auch hier wieder verworfen werden. *Mean* gibt einen sehr hohen Durchschnitt aus. *Snaïve*  bildet zwar die Saisonalität ab, spiegelt aber interessanterweise hierbei die Werte  von 2017 und lässt den Trend unbeachtet. 
+
+*TSLM* scheint, im aggregierten Ansatz, für ein Baselinemodel zu funktionieren. Die Vorhersage über den Zeitraum von einem Jahr zeigt, dass das Modell sowohl den Trend als auch die Saisonalität aufnimmt. Der erhöhte Bedarf zu Beginn jedes Monats ist deutlich herausgearbeitet. Die, sich mit den Traininsdaten überschneidenden, Vorhersagewerte sind zu niedrig, was durch den plötzlich störkeren Aufwärtstrend erklärbar ist, das Model scheint sich aber im weiteren Verlauf einer möglichen Realität anzunähern. Was bei dieser Variante nicht wiederzufinden ist, sind die Ruhephasen. Im Gegensatz zu aktuellen Vorgehensweise wird bei diesem Modell, außer in den Wintermonaten, sonst nie mit 90 Personen im Bereitschaftsdienst das Auslangen gefunden werden. Das bedeutet, für das Deutsche Rote Kreuz Berlin wird der Bereitschaftsdienst damit in Summe vermutlich teuerer, jedoch besser planbar und es müssen weniger Bereitschaftsfahrer zusätzlich aktiviert werden. 
+
+*TSLM* wird als Baselinemodel für diesen UseCase akzeptiert.
+
+## Evaluierung
+
 
 ```{r}
 #| echo: true
@@ -275,10 +292,20 @@ aug %>% features(.innov, ljung_box, lag = 121)
 #| warning: false
 
 
-mod <- select(sby_basemodel, drift) 
+mod <- select(sby_basemodel, tslm) 
 gg_tsresiduals(mod)
 
 ```
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_basefc %>%
+  accuracy(ts_sby_week, list(RMSE = RMSE, MAE = MAE, MAPE = MAPE, MASE = MASE, RMSSE = RMSSE)) %>%
+  select(-.type)
+```
+
 
 ```{r}
 #| echo: true
@@ -286,48 +313,32 @@ gg_tsresiduals(mod)
 #| warning: false
 
 sby_basefc %>%
-  accuracy(ts_sby,
-    list(qs = quantile_score), probs = 0.99
-    )
+  accuracy(ts_sby_week,
+    list(qs = quantile_score, winkler = winkler_score, crps = CRPS), probs = 0.99) %>%
+  select(-.type)
 ```
 
-# sby_need prediction
+
+
+### Speichern modelspezifischer Daten
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 
-call_pred <- sby_basefc %>%
-  filter(.model == "tslm") %>%
-  as.tibble() %>%
-  select(date, calls = .mean) %>%
-  mutate(diff_nduty = 200) %>%
-  as_tsibble(index = date)
-```
+# Speichern der Sampledaten (hier alles)
+save(ts_sby_week, file = "../../00_sample_data/03_for_modeling/baseline.rda")
 
-
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-
-sby_pred <- predict(lm_sby, call_pred, interval = "prediction")
-
-call_pred$sby <- pmax(0,sby_pred[,1])
+# Das eingesetzte Model speichert aufbereitete Daten in ../../01_data/02_warehouse
 ```
 
 ```{r}
-#| echo: true
 #| message: false
 #| warning: false
+#| include: false
 
-p <- ggplot() +
-  geom_line(data = ts_sby, aes(x = date, y = sby_need)) +
-  geom_line(data = call_pred, aes(x = date, y = sby, colour = "red"))
-
-ggplotly(p)
-  
+rm(list = ls()) # nach Durchlauf alles löschen
 ```
 
+## Literaturverzeichnis

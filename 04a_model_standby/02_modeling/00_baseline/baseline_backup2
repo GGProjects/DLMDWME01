@@ -1,0 +1,333 @@
+---
+title: "Baseline Modelling"
+author: "Georg Grunsky"
+editor: visual
+bibliography: references.bib
+---
+
+```{r}
+#| label: load packages
+#| message: false
+#| warning: false
+#| include: false
+
+require(dplyr)
+require(fpp3)
+require(plotly)
+require(ggpubr)
+```
+
+## Prämisse
+
+### Use Case Analyse {#sec-use-case-analyse}
+
+In der vorausgegangenen Use Case Analyse [@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
+
+In der Use Case Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
+
+**SARIMA** (Seasonal Autoregressive Integrated Moving Average) stellt dabei ein klassisches Modell für saisonale Zeitreihenanalysen dar. **Facebook Prophet** wurde ebenso für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
+
+Eine weitere, sehr "schlanke", aber nicht so fein skalierbare Methode für die Vorhersage saisonaler Daten stellt **SNAIVE** (Seasonal Naive Model) dar. Dieser Algorithmus .... eignet sich daher für ein Baseline Model ...
+
+Auf Basis des DRK-Reformtarifvertrags [@deutsches_rotes_kreuz_drk-reformtarifvertrag_2023] wurde geschätzt, dass ein Tag mit, bisher fix eingeteilten, 90 Bereitschaftsfahrer:innen etwa €14.850,- kostet (€165,- pro Bereitschaftsfahrer:in), die an vielen Tagen gar nicht abgerufen werden. Diese Kosten können gut als Messwerte in eine Kostenfunktion für die Güte des Modells integriert werden. Ein deutlich höherer Strafbetrag für eine zu niedrige Schätzung soll den Anforderungen des K.O.-Kriteriums entsprechen, nie zu wenig Bereitschaftspersonal vorzusehen.
+
+### Explorative Datenanalyse
+
+Die Erkenntnisse der explorativen Datenanalyse bieten eine weitere Basis für die Erstellung eines Baseline Models und lassen sich wie folgt zusammenfassen:
+
+1.  Beim Bedarf an StandBy-Personal wurde über die Jahre ein positiver Trend mit einem starken Anstieg seit Beginn des Jahres 2019 beobachtet.
+2.  Ebenso wurde eine
+    1.  starke wochenweise Saisonalität mit Perioden zw. 3-5 Wochen,
+    2.  eine Abhängigkeit zum Tag im Monat mit einem starken Abwärtstrend zu Beginn jeden Monats und Periodenlängen von etwa drei Tagen,
+    3.  sowie eine schwächer ausgeprägte monatliche Saisonalität festgestellt.
+3.  Es wurde außerdem festgehalten, dass eine Abhängigkeit des Bedarfs an StandBy-Personal von der Anzahl krankgemeldeter Bereitschaftsfahrer:innen und der Anzahl eingehender Notrufe plausibel scheint. In der wochenweisen Aggregation der Daten bestätigte das neu entstandene Merkmal call_per_sick (eine Division der Anzahl der Notrufe durch die Anzahl der Krankmeldungen) diese Annahme. Dies wurde vor allem in der logarithmischen Darstellung der Daten ersichtlich.
+
+Die möglichen Prediktoren aus dem letzten Punkt müssten für eine Verwendung als solche selbst erst einzeln vorhergesagt und danach zusammengeführt werden. Ein direktes Lernen der zeitlichen Muster der abhängigen Variable scheint an dieser Stelle für ein Baseline Model effizienter. Die ersten beiden Punkte weisen auf eine Kombination aus Trends und unterschiedlichen Saisonalitäten hin, die in einer Vorhersage berücksichtigt werden muss. Die Verwendung von dem oben beschriebenen Facebook Prophet Alorithmus für ein Baseline Model scheint den Anforderungen zu entsprechen.
+
+## Baseline Model mit SNAIVE
+
+SNAIVE und fable
+
+## Baseline Models
+
+Buchreferenz, Auswahl
+
+### Kostenfunktion
+
+Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedrige Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
+
+# Daten laden
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+load(file = "../../00_sample_data/02_processed/data_explorative.rda")
+
+```
+
+# Aufsplitten der Daten in Trianings- und Testdaten
+
+Vorhersagezeitraum etwa 2 Monate
+Datenzeitraum etwa drei Jahre (36 Monate)
+Übliche Aufsplittung 80:20 aber zumindest den Vorhersagezeitraum (ca. 29 Monate:7 Monate) Vorhersagezeitraum gegeben.
+Starker Aufwärtstrend von Anfang 2019 soll im Training aber noch mitgenommen werden, daher reduktion des Testdatensatzes auf 4 Monate (ab 2019-02-01)
+
+Durch moving average erzeugte NAs zu beginn und ende des Datensatzes gleich wegfiltern, damit später keine Fehler mehr daraus resultieren.
+
+Gleichzeitige Reduktion der Variablen in den Datensätzen
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby_train <- ts_sby %>%
+  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
+  filter(date < "2019-03-01", !is.na(MA2_8), !is.na(MQ7))
+
+ts_sby_test <- ts_sby %>%
+  select(date, calls, MA2_8, diff_nduty, sby_need, MQ7) %>%
+  filter(date >= "2019-03-01", !is.na(MA2_8), !is.na(MQ7))
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Beobachteter Faktor für diese Differenz in der o.a. Korrelation
+faktor <- 5
+
+# Initialwert, ab wievielen Anrufen Bereitschaftspersonal zu aktivieren war
+initial <- 8150
+
+ggplot(ts_sby_train, 
+       aes(x = pmax(0, calls - (diff_nduty * faktor) - initial),
+           y = sby_need
+           )) +
+         geom_point() +
+  stat_smooth(method = "lm", se = TRUE) +
+  stat_regline_equation(label.x.npc = "center")
+
+```
+
+Lineare Korrelation auch im Trainingsdatensatz noch etwa gleich gegeben. Der beschriebene Initialwert von 8.150 liefert eine gute Lineargleichung mit einem niedrigen aber positiven Intercept.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+lm_sby = lm(sby_need ~ pmax(0,calls - (diff_nduty * 5) - 8150), 
+            data = ts_sby_train)
+
+```
+
+Beschreibung Baseline- oder Benchmarkmodels gem. Quelle, welche Algorithmen und warum die u.a. Wahl und die Combination
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Training
+system.time(
+  progressr::with_progress(
+    sby_basemodel <- ts_sby_train %>%
+      model(
+        snaive = SNAIVE(sby_need ~ lag(63), drift = TRUE),
+        drift = RW(sby_need ~ drift()),
+        mean = MEAN(sby_need ~ window(size = 63)),
+        ets = ETS(sby_need ~ trend(method = "A") + 
+                    season(method = "A")),
+        tslm = TSLM(sby_need ~ trend() + season()),
+        croston = CROSTON(sby_need)
+      ) 
+  )
+)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Vorhersage
+system.time(
+  progressr::with_progress(
+    sby_basefc <- sby_basemodel %>%
+      forecast(h = "4 months", level = c(80))
+  )
+)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+p <- sby_basefc %>%
+  autoplot(ts_sby_test,
+           level = c(80)) +
+  labs(y = "Anrufe",
+       title = "Vorhersage")
+
+ggplotly(p)
+p
+
+```
+# moving quantile
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby <- ts_sby %>%
+  mutate(
+    MQ7 = slider::slide_dbl(sby_need, 
+                            ~ quantile(x = .x,
+                                       probs = 0.99),
+                            .before = 3, .after = 3,
+                            .complete = TRUE))  
+
+p <- ts_sby %>%
+  gg_season(MQ7, period = "1y") +
+  geom_smooth(level = 0.99, se = TRUE)
+
+ggplotly(p)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| 
+ts_sby %>%
+  features(MQ7,feat_spectral)
+```
+
+
+```{r}
+# Monatsweise Aggregation deiner täglichen Daten (falls noch nicht erfolgt)
+ts_sby_week <- ts_sby %>%
+  index_by(week = ~ yearweek(.)) %>%
+  summarise(w_need = mean(MQ7)) %>%
+  filter(!is.na(w_need))
+
+# Modell: Trend + monatsspezifischer saisonaler Effekt
+sby_basemodel <- ts_sby_week %>%
+  #filter_index("2019 W10" ~ .) %>%
+        model(
+        snaive = SNAIVE(w_need ~ lag(52), drift = TRUE),
+        drift = RW(w_need ~ drift()),
+        mean = MEAN(w_need ~ window(size = 52)),
+        tslm = TSLM(w_need ~ trend() + season()),
+        croston = CROSTON(w_need)
+      ) 
+
+# Prognose z. B. für 12 Monate
+sby_basefc <- forecast(sby_basemodel, h = "12 months")
+  
+p <- sby_basefc %>%
+  autoplot(ts_sby_week,
+           level = c(80)) +
+  labs(y = "Anrufe",
+       title = "Vorhersage")
+
+ggplotly(p)
+p
+
+```
+In Baseline reicht der MQ7 ansatz
+
+# Evaluierung
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+aug <- augment(sby_basemodel)
+
+p <- ggplot(aug, aes(x = .innov, fill = .model)) +
+  geom_histogram()
+
+ggplotly(p)
+
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+aug %>% features(.innov, ljung_box, lag = 121)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+
+mod <- select(sby_basemodel, drift) 
+gg_tsresiduals(mod)
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_basefc %>%
+  accuracy(ts_sby,
+    list(qs = quantile_score), probs = 0.99
+    )
+```
+
+# sby_need prediction
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+call_pred <- sby_basefc %>%
+  filter(.model == "tslm") %>%
+  as.tibble() %>%
+  select(date, calls = .mean) %>%
+  mutate(diff_nduty = 200) %>%
+  as_tsibble(index = date)
+```
+
+
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_pred <- predict(lm_sby, call_pred, interval = "prediction")
+
+call_pred$sby <- pmax(0,sby_pred[,1])
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+p <- ggplot() +
+  geom_line(data = ts_sby, aes(x = date, y = sby_need)) +
+  geom_line(data = call_pred, aes(x = date, y = sby, colour = "red"))
+
+ggplotly(p)
+  
+```
+
