@@ -27,7 +27,7 @@ Dieses Dokument beschreibt die Erarbeitung eines Baseline- oder Benchmarkmodel. 
 -   **Seasonal Naïve**: Der Wert der letzten gleichen Saison zB das gleiche Monat des Vorjahres, oder der gleiche Tag des Vormonats (abhängig von der Saisonalität)
 -   **Drift**: Eine Variation von Naïve, die die durchschnittliche Veränderungsrate der Daten berücksichtigt und somit auch steigen oder fallen kann
 
-Im R-package *fpp3* ist außerdem auch ein **TSLM** Algorithmus enthalten, der ein Lineares Modell mit Trend- und saisonalen Komponenten auf die Daten anwendet. Dieser  Algorithmus könnte sich in diesem Anwenungsfall auch gut für ein Baselinemodel eignen. 
+Im R-package *fpp3* ist außerdem auch ein **TSLM** Algorithmus enthalten, der ein Lineares Modell mit Trend- und saisonalen Komponenten auf die Daten anwendet. Dieser Algorithmus könnte sich in diesem Anwenungsfall auch gut für ein Baselinemodel eignen.
 
 Nachdem die Modelle wenig Rechenkapazität benötigen, bietet es sich an, einfach alle Modelle zu trainieren und anschließend die, für diese Aufgabe gültige Benchmark zu wählen. Außerdem gibt die aktuelle Vorgehensweise, nämlich ein konstantes Vorhalten von 90 Bereitschaftsfahrenden ebenso bereits eine zu berücksichtigende Messvariable vor, schließlich sollen ja langfristig Bereitschaftskosten durch die Anwendung eines Modell gespart werden können.
 
@@ -42,13 +42,12 @@ Die Erkenntnisse der explorativen Datenanalyse liefern eine Grundlage für die E
 3.  Ein Mindestmaß an etwa 35 Personen in Bereitschaft sinnvoll ist.
 
 4.  Ebenso wurde eine jährliche und (instabile) monatliche Saisonalität mit schwacher ausgeprägten wöchentlichen Perioden erkannt. Die Autokorrelation zeigt, dass eine Vorhersage über einen längeren Zeitraum nicht zielführend ist. Das wird vmtl. über die Änderungen im Muster ab Beginn 2019 erklärt werden können.
-    
-5. Es wurde außerdem festgehalten, dass eine nahezu lineare Abhängigkeit des Bedarfs an StandBy-Personal zu der Anzahl eingehender Notrufe besteht, diese jedoch auch vom diensthabenden Personal beeinflusst wird.
 
-Am erfolgversprechensten wurde eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need* beurteilt, wobei Letztere durch *n_duty* beeinflusst ist. 
+5.  Es wurde außerdem festgehalten, dass eine nahezu lineare Abhängigkeit des Bedarfs an StandBy-Personal zu der Anzahl eingehender Notrufe besteht, diese jedoch auch vom diensthabenden Personal beeinflusst wird.
 
-Für ein Baselinemodel scheint der obige Ansatz jedoch zu aufwendig. Deshalb wird dieses direkt auf die Zielvariable trainiert. Um den oben genannten Herausforderungen in der Vorhersage zu begegnen, wird jedoch noch eine weitere Vorverarbeitung der Daten nötig sein. 
+Am erfolgversprechensten wurde eine indirekte Vorhersage aufgrund der Saisonalität des Merkmals *calls* und der, ab einem gewissen Wert, nahezu linear anzunehmenden Korrelation mit *sby_need* beurteilt, wobei Letztere durch *n_duty* beeinflusst ist.
 
+Für ein Baselinemodel scheint der obige Ansatz jedoch zu aufwendig. Deshalb wird dieses direkt auf die Zielvariable trainiert. Um den oben genannten Herausforderungen in der Vorhersage zu begegnen, wird jedoch noch eine weitere Vorverarbeitung der Daten nötig sein.
 
 ## Daten laden
 
@@ -76,17 +75,10 @@ ts_sby_train <- ts_sby %>%
   select(date, sby_need) %>%
   slice((n() - 62):0)
 
-# Zeitraum Trainingsdatensatz
-range(ts_sby_train$date)
-
 
 ts_sby_test <- ts_sby %>%
   select(date, sby_need) %>%
   slice(n():(n() - 61))
-
-# Zeitraum Testdatensatz
-range(ts_sby_test$date)
-
 ```
 
 ## Modelerstellung
@@ -149,20 +141,19 @@ p <- sby_basefc %>%
 ggplotly(p, tooltip = c("y", "x", "colour"))
 ```
 
-In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert.
-Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen negativen Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 0). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
+In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert. Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen negativen Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 0). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
 
-*TSLM* erkennt wochenweise Schwankungen (wie auch im Autokorrelationsplot beobachtet), setzt diese allerdings viel zu gleichmäßig und vor allem zu niedrig an. *Snaïve* kann offenbar den rapiden Wechsel zwischen 0 und auftretenden Spitzen modellieren. Setzt diese Spitzen allerdings zu niedrig an und, viel fataler, nicht dort wo sie tatsächlich auftreten. 
+*TSLM* erkennt wochenweise Schwankungen (wie auch im Autokorrelationsplot beobachtet), setzt diese allerdings viel zu gleichmäßig und vor allem zu niedrig an. *Snaïve* kann offenbar den rapiden Wechsel zwischen 0 und auftretenden Spitzen modellieren. Setzt diese Spitzen allerdings zu niedrig an und, viel fataler, nicht dort wo sie tatsächlich auftreten.
 
-Positiv hervorzuheben ist die benötigte Zeit für Training und Vorhersage. Diese betrug hier nur wenige hunderstel Sekunden. Der dazu verwendete Rechner war ein  älteres Notebook vom Typ: Dell Latitude 5490, Intel i7 vPro (8th Gerneration) mit 16 Gb RAM. 
+Positiv hervorzuheben ist die benötigte Zeit für Training und Vorhersage. Diese betrug hier nur wenige hunderstel Sekunden. Der dazu verwendete Rechner war ein älteres Notebook vom Typ: Dell Latitude 5490, Intel i7 vPro (8th Gerneration) mit 16 Gb RAM.
 
 Die Berechnung der Modelle auf neueren Systemen sollte die Hardware demnach nicht vor große Herausforderungen stellen.
 
 ### Zweiter Versuch mit modifizierten Daten
 
-Der Vorhersageplot des ersten Verusches zeigt gut dessen Scheitern. Die hohen Ausschläge zu Beginn jedes Monats werden nicht durch die Modelle abgedeckt, die Peaks sind aber gleichzeitig auch zu unregeläßig um zB von einem *Snaïve*-Model "getroffen" zu werden. *TSLM* lässt schönt die wöchentliche Komponente in den Daten erkennen, die aber eigentlich nur schwach ausgeprägt ist. 
+Der Vorhersageplot des ersten Verusches zeigt gut dessen Scheitern. Die hohen Ausschläge zu Beginn jedes Monats werden nicht durch die Modelle abgedeckt, die Peaks sind aber gleichzeitig auch zu unregeläßig um zB von einem *Snaïve*-Model "getroffen" zu werden. *TSLM* lässt schönt die wöchentliche Komponente in den Daten erkennen, die aber eigentlich nur schwach ausgeprägt ist.
 
-Die Idee für den zweiten Versuch eines Benchmarkmodels ist es, die rapiden Wechsel zwischen Spitzen und 0-Linie zu entfernen, die ensprechende Höhe des möglichen Bedarfes abzudecken und durch Aggregation die "Treffsicherheit" für auftretenden Bedarf zu erhöhen. Auf die intra-wöchentlichen Schwankungen wird keine Rücksicht mehr genommen. 
+Die Idee für den zweiten Versuch eines Benchmarkmodels ist es, die rapiden Wechsel zwischen Spitzen und 0-Linie zu entfernen, die ensprechende Höhe des möglichen Bedarfes abzudecken und durch Aggregation die "Treffsicherheit" für auftretenden Bedarf zu erhöhen. Auf die intra-wöchentlichen Schwankungen wird keine Rücksicht mehr genommen.
 
 Dazu bietet sich, wie auch in der explorativen Datenanalyse, die Verwendung eines gleitenden Durchschnitts an, um den Wochenbedarf zu glätten. Das Problem der Durchschnittsbildung ist jedoch, dass die Spitzen "per design" nie richtig vorhergesagt werden können. Als gleitendes Maß wird in diesem Fall daher die 99% Quantile mit einem Fenster von sieben Tagen getestet.
 
@@ -197,6 +188,7 @@ Im saisonalen Plot sieht man, dass die Spitzenwerte, durch die Glättung, deutli
 ts_sby %>%
   features(MQ7,feat_spectral)
 ```
+
 Die Treffsicherheit des Baselinemodells soll weiters durch eine wochenweise Aggregation erhöht werden. Das bedeutet in der Praxis, dass jeweils für eine ganze Woche die selbe Anzahl an Bereitschaftspersonal vorzuhalten wäre, da nicht genau bestimmt werden kann, wann genau der Spitzenbedarf auftreten wird. Nach der Aggregation werden ein neuer Trainings und Testdatensatz gebildet und die Modelle trainiert.
 
 ```{r}
@@ -210,21 +202,14 @@ ts_sby_week <- ts_sby %>%
   summarise(w_need = max(MQ7)) %>%
   filter(!is.na(w_need))
 
-# Datenaufteilung
+# Datenaufteilung (61 Tage werden zu 9 Wochen)
 ts_sby_train <- ts_sby_week %>%
   select(week, w_need) %>%
   slice((n() - 9):0)
 
-# Zeitraum Trainingsdatensatz
-range(ts_sby_train$week)
-
-
 ts_sby_test <- ts_sby_week %>%
   select(week, w_need) %>%
   slice(n():(n() - 9))
-
-# Zeitraum Testdatensatz
-range(ts_sby_test$week)
 
 ```
 
@@ -269,22 +254,38 @@ p <- sby_basefc %>%
            level = c(99)) +
   autolayer(ts_sby_train %>% filter(year(week) >= 2018), colour = "red" ) +
   labs(y = "sby_need",
-       title = "Baseline, erster Versuch")
+       title = "Baseline, zweiter Versuch")
 
 ggplotly(p, tooltip = c("y", "x", "colour"))
-p
+
 ```
 
-Nachdem im Saisonalitätsplot ein Aufwärtstrend klar erkennbar ist, wurde der Trainingszeitraum auf zwei etwa zwei Jahre und der Vorhersagezeitraum auf ein Jahr erweitert. Die Berechnungszeit für das Training und die Vorhersage kann auch bei diesem Ansatz vernachlässigt werden. 
+Nachdem im Saisonalitätsplot ein Aufwärtstrend klar erkennbar ist, wurde der Trainingszeitraum auf zwei etwa zwei Jahre und der Vorhersagezeitraum auf ein Jahr erweitert. Die Berechnungszeit für das Training und die Vorhersage kann auch bei diesem Ansatz vernachlässigt werden.
 
-Der o.a. Plot folgt dem Farbschema des vorigen Vorhersageplots. Die unterschiedlichen Qualitäten der Vorhersagen sind gut erkennbar. *Drift* und *Naïve* können auch hier wieder verworfen werden. *Mean* gibt einen sehr hohen Durchschnitt aus. *Snaïve*  bildet zwar die Saisonalität ab, spiegelt aber interessanterweise hierbei die Werte  von 2017 und lässt den Trend unbeachtet. 
+Der o.a. Plot folgt dem Farbschema des vorigen Vorhersageplots. Die unterschiedlichen Qualitäten der Vorhersagen sind gut erkennbar. *Drift* und *Naïve* können auch hier wieder verworfen werden. *Mean* gibt einen sehr hohen Durchschnitt aus. *Snaïve* bildet zwar die Saisonalität ab, spiegelt aber interessanterweise hierbei die Werte von 2017 und lässt den Trend unbeachtet.
 
-*TSLM* scheint, im aggregierten Ansatz, für ein Baselinemodel zu funktionieren. Die Vorhersage über den Zeitraum von einem Jahr zeigt, dass das Modell sowohl den Trend als auch die Saisonalität aufnimmt. Der erhöhte Bedarf zu Beginn jedes Monats ist deutlich herausgearbeitet. Die, sich mit den Traininsdaten überschneidenden, Vorhersagewerte sind zu niedrig, was durch den plötzlich störkeren Aufwärtstrend erklärbar ist, das Model scheint sich aber im weiteren Verlauf einer möglichen Realität anzunähern. Was bei dieser Variante nicht wiederzufinden ist, sind die Ruhephasen. Im Gegensatz zu aktuellen Vorgehensweise wird bei diesem Modell, außer in den Wintermonaten, sonst nie mit 90 Personen im Bereitschaftsdienst das Auslangen gefunden werden. Das bedeutet, für das Deutsche Rote Kreuz Berlin wird der Bereitschaftsdienst damit in Summe vermutlich teuerer, jedoch besser planbar und es müssen weniger Bereitschaftsfahrer zusätzlich aktiviert werden. 
+*TSLM* scheint, im aggregierten Ansatz, für ein Baselinemodel zu funktionieren. Die Vorhersage über den Zeitraum von einem Jahr zeigt, dass das Modell sowohl den Trend als auch die Saisonalität aufnimmt. Der erhöhte Bedarf zu Beginn jedes Monats ist deutlich herausgearbeitet. Die, sich mit den Traininsdaten überschneidenden, Vorhersagewerte sind zu niedrig, was durch den plötzlich störkeren Aufwärtstrend erklärbar ist, das Model scheint sich aber im weiteren Verlauf einer möglichen Realität anzunähern. Was bei dieser Variante nicht wiederzufinden ist, sind die Ruhephasen. Im Gegensatz zu aktuellen Vorgehensweise wird bei diesem Modell, außer in den Wintermonaten, sonst nie mit 90 Personen im Bereitschaftsdienst das Auslangen gefunden werden. Das bedeutet, für das Deutsche Rote Kreuz Berlin wird der Bereitschaftsdienst damit in Summe vermutlich teuerer, jedoch besser planbar und es müssen weniger Bereitschaftsfahrer zusätzlich aktiviert werden.
 
-*TSLM* wird als Baselinemodel für diesen UseCase akzeptiert.
+*TSLM* wird als Baselinemodel für diesen UseCase akzeptiert und u.a. noch einmal im Fokus mit 80%, 90% und 99% Konfidenzintervall darstellt. Das 99% Intervall hätte, im Vergleich mit den Testdaten, auch die hohen Bedarfsspitzen ausreichend prognostiziert, allerdings würden mit diesem Konfidenzintervall in Monaten mit weniger Bedarf trotzdem über 250 Bereitschaftsfahrer:innen vorgesehen werden. Zumindest beim Baseline-Model werden hier Abstriche in den Anforderungen gemacht werden müssen.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_basefc %>% 
+  filter(.model == "tslm") %>%
+  autoplot(ts_sby_test,
+           level = c(80, 90, 99)) +
+  autolayer(ts_sby_train %>% filter(year(week) >= 2019), colour = "red" ) +
+  labs(y = "sby_need",
+       title = "TSLM für wöchentliche Daten")
+
+```
 
 ## Evaluierung
 
+Der u. a. angeführte Residualsplot zeigt ein nahezu optimales Verhalten des Algorithmus. In den Residuals ist auf den ersten Blick kein deutliches "Rest-Pattern" in den Daten zu beobachten und genauso wenig im Autokorrelationswert. Die Residuals wären im besten Fall mit einem arithmetischen Mittel von 0 normal verteilt. Das trifft nicht ganz zu, die Annäherung an das gewünschte Verhalten ist aber gut erkennbar. Dieser Plot zeigt allerdings nur, wie gut die Realität mit dem erstellten Modell (den sogenannten *fitted values*) erklärt werden kann. Es ist keine Bewertung der Vorhersagefähigkeit.
 
 ```{r}
 #| echo: true
@@ -296,29 +297,62 @@ mod <- select(sby_basemodel, tslm)
 gg_tsresiduals(mod)
 
 ```
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
 
-sby_basefc %>%
-  accuracy(ts_sby_week, list(RMSE = RMSE, MAE = MAE, MAPE = MAPE, MASE = MASE, RMSSE = RMSSE)) %>%
-  select(-.type)
-```
-
+Für diesen Fall werden nachfolgend einige Bewertungsmethoden durchgeführt, die die Güte des *TSLM* belegen sollen. Die Anforderungen des Use Case sehen eine tageweise Vorhersage vor, das Modell berechnet allerdings wöchentliche Daten. Auch für die Vergleichbarkeit mit zukünftigen Modellen ist es sinnvoll die aggregierten Daten wieder auf Tagesdaten aufzuteilen. Beim *TSLM* resultiert das natürlich darin, dass innerhalb einer Woche alle Tage den gleichen Wert haben.
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 
-sby_basefc %>%
-  accuracy(ts_sby_week,
-    list(qs = quantile_score, winkler = winkler_score, crps = CRPS), probs = 0.99) %>%
+week2day <- ts_sby %>%
+  filter(!is.na(MQ7)) %>%
+  mutate(week = yearweek(date)) %>%
+  select(week, date) 
+
+fc <- sby_basefc %>% 
+  as_tibble() %>% 
+  left_join(week2day, by = "week") %>%
+  filter(!is.na(date)) %>%
+  mutate(sby_need = w_need) %>%
+  select(.model, date, sby_need, .mean) %>%
+  as_fable(index = date, key = .model, response = "sby_need", distribution = sby_need)
+
+fc %>% 
+  filter(.model == "tslm") %>%
+  autoplot(filter(ts_sby, date >= "2019-03-25"),
+           level = c(80, 90, 99)) +
+  labs(y = "sby_need",
+       title = "TSLM für Tagesdaten")
+
+```
+
+Wie die Grafik zeigt wird durch das Baseline Model zumeist ein zu hoher Wert vorhergesagt, die Spitzenwerte der Testdaten werden durch die Forecast aber nicht erreicht. Als einfaches Benchmark-Modell ist *TSLM* in diesem Fall jedoch geeignet.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+fc %>%
+  accuracy(ts_sby, list(RMSE = RMSE, MAE = MAE)) %>%
   select(-.type)
 ```
 
+Die Messwerte RMSE und MAE zeigen unterschiedliche Bewertungen, in beiden Fällen wäre jedoch der einfache Durchschnitt (*mean*) das am wenigsten fehleranfällige Modell. Dass den Anforderungen an den Use Case dabei nicht ensprochen wird, ist aus den Visualisierungen gut erkennbar. Außerdem besteht hier die "Benchmark" in der bisherigen Vorgehensweise und einem Fixwert von 90 Bereitschaftsfahrenden. Im Allgemeinen sind die Fehlerwerte sehr hoch zu bewerten, aber für den zukünfigen Vergleich mit weiter entwickelten Modellen sind sie hilfreich.
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+fc %>%
+  accuracy(ts_sby,
+    list(quantile_score = quantile_score), probs = 0.90) %>%
+  select(-.type)
+```
+
+Ergänzend zu den irreführenden vorangegangenen Gütekriterien bietet sich für den vorliegenden Use Case zuätzlich die Bewertung der Verteilung zur Gütebestimmung an. Der ***Quantile Score*** vergleicht die vorhergesagten mit den aufgetretenen Werten unter der Annahme, dass (gem. gesetztem Parameter) 90% der realen Werte unter der entsprechenden Quantille der Verteilung liegen. Die Messung folgt einer *Pinball Loss Function* [@vermorel_pinball_2012] wobei, bei dem gesetzten 90% Parameter, Fehler die überhalb dieser Marke liegen gewichteter bewertet werden, als jene die unterhalb des Wertes liegen. Der Durchschnitt der einzelnen Bewertungen gibt den Quantile Score, der als absoluter Fehler zu verstehen ist. Je niedriger der Quantile Score, desto besser.
 
 ### Speichern modelspezifischer Daten
 
@@ -330,8 +364,9 @@ sby_basefc %>%
 # Speichern der Sampledaten (hier alles)
 save(ts_sby_week, file = "../../00_sample_data/03_for_modeling/baseline.rda")
 
-# Das eingesetzte Model speichert aufbereitete Daten in ../../01_data/02_warehouse
 ```
+
+Das Modell selbst wird im Ordner **03_deployment** des Modellverzeichnisses als **sby_baseline.R** Datei abgelegt.
 
 ```{r}
 #| message: false

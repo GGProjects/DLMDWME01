@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-apply_sby_baseline <- function(data, train_weeks = 104) {
+apply_sby_baseline <- function(data, train_weeks = 104, fcperiod = "2 months") {
   require(dplyr)
   require(fpp3)
   
@@ -30,7 +30,6 @@ apply_sby_baseline <- function(data, train_weeks = 104) {
   t1 <- system.time(
     progressr::with_progress(
       sby_basemodel <- ts_sby_week %>%
-        filter(year(week) >= 2017) %>%
         model(
           tslm = TSLM(w_need ~ trend() + season())
         ) 
@@ -41,18 +40,26 @@ apply_sby_baseline <- function(data, train_weeks = 104) {
   t2 <- system.time(
     progressr::with_progress(
       sby_basefc <- sby_basemodel %>%
-        forecast(h = "2 months", level = c(99))
+        forecast(h = fcperiod, level = c(80, 90, 99))
     ), gcFirst = TRUE
   )
   
   ##### in Tagesdaten konvertieren #####
-  fc <- data %>%
-    index_by(week = ~ yearweek(.)) %>%
-    select(date, week) %>%
-    as_tibble() %>%
-    right_join(as_tibble(sby_basefc), by = "week") %>%
-    ungroup() %>%
-    select(date, sby_need = .mean)
+  daysequence <- seq.Date(from = range(as.Date(sby_basefc$week))[1],
+                   to = range(as.Date(sby_basefc$week))[2]+6,
+                   by = 1)
+  
+  week2day <- data.frame(date = daysequence,
+                         week = yearweek(daysequence))
+  
+  fc <- sby_basefc %>% 
+    as_tibble() %>% 
+    left_join(week2day, by = "week") %>%
+    filter(!is.na(date)) %>%
+    mutate(sby_need = w_need) %>%
+    select(.model, date, sby_need, .mean) %>%
+    as_fable(index = date, key = .model, response = "sby_need", distribution = sby_need)
+  
   
   ##### Ergebnisausgabe #####
   calctime <- t1[3] + t2[3]
