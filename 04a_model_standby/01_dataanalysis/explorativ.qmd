@@ -242,8 +242,6 @@ Wie der u.a. Korrelationsplot von *calls* und *sby_need* zeigt, hatten die Erhö
 #| message: false
 #| warning: false
 
-require(ggpubr)
-
 p <- ggplot(ts_sby, 
             aes(x = calls,
                 y = sby_need,
@@ -278,8 +276,6 @@ ts_sby <- ts_sby %>%
          calls_sick = calls/n_sick,
          reg_calls_sick = reg_calls/n_sick) %>%
   select(-c("n_sick"))
-
-require(ggpubr)
 
 ggplot(ts_sby, 
             aes(x = reg_calls,

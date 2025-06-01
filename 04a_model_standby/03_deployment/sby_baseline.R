@@ -1,13 +1,23 @@
-#' Title
+#' Standby Prediction - Baseline Model
 #'
-#' @param data 
-#' @param train_weeks 
+#' Creates a StandBy Personel forecast for a given period, using a Baseline
+#' model, based on the TSLM algorithm. Predictions are calculated using weekly 
+#' maxima.
 #'
-#' @returns
+#' @param data Training data used for retraining
+#' @param train_weeks Number of weeks used for training (default = 104)
+#' @param fcperiod Period to forecast
+#' @param sby_min Minimum standby personal to be used (default = 35)
+#'
+#' @returns A list, containing the calculation time and the prediction results
 #' @export
 #'
 #' @examples
-apply_sby_baseline <- function(data, train_weeks = 104, fcperiod = "2 months") {
+#' @author Georg Grunsky, \email{georg.grunsky@@iu-study.org}
+apply_sby_baseline <- function(data, 
+                               train_weeks = 104, 
+                               fcperiod = "2 months",
+                               sby_min = 35) {
   require(dplyr)
   require(fpp3)
   
@@ -60,10 +70,15 @@ apply_sby_baseline <- function(data, train_weeks = 104, fcperiod = "2 months") {
     select(.model, date, sby_need, .mean) %>%
     as_fable(index = date, key = .model, response = "sby_need", distribution = sby_need)
   
+  sby_pred_base <- fc %>%
+    as_tibble() %>%
+    mutate(sby = pmax(sby_min,
+                      round(.mean,0))) %>%
+    select(date, sby)
   
   ##### Ergebnisausgabe #####
   calctime <- t1[3] + t2[3]
-  result <- list(fc = fc,
+  result <- list(sby_pred = sby_pred_base,
                  calctime = calctime)
   return(result)
 }
