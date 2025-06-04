@@ -1,6 +1,7 @@
 ---
-title: "Baseline Modelling"
+title: "Prophet Model"
 author: "Georg Grunsky"
+date: today
 editor: visual
 bibliography: references.bib
 ---
@@ -13,7 +14,6 @@ bibliography: references.bib
 
 require(dplyr)
 require(fpp3)
-require(plotly)
 require(ggpubr)
 require(fable.prophet)
 ```
@@ -258,12 +258,11 @@ sby_pred <- predict(lm_sby, call_pred_adv, interval = "prediction")
 call_pred_adv$sby <- pmax(0,round(sby_pred[,3],0))
 
 # Anzeige im Vergleich zu tatsächlichem sby_need
-p <- ggplot() +
+ggplot() +
   geom_line(data = filter(ts_sby_test, date > "2019-03-26"), 
             aes(x = date, y = sby_need)) +
   geom_line(data = filter(call_pred_adv, date > "2019-03-26"), 
             aes(x = date, y = sby, colour = "red"))
-ggplotly(p)
 ```
 
 ## Evaluierung sby_need
@@ -323,10 +322,9 @@ Der Quantillen-Parameters wird im deployten Modell flexibel setzbar sein. Der De
 ## Speichern modelspezifischer Daten
 
 ```{r}
-#| eval: false
+#| echo: true
 #| message: false
 #| warning: false
-#| include: false
 
 # Speichern der Sampledaten (hier alles)
 save(ts_sby_test, ts_sby_train, eval, call_pred_adv, ts_sby,

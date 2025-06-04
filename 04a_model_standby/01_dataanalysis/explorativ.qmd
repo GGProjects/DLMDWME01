@@ -1,6 +1,7 @@
 ---
 title: "Exploratory Analysis: StandyBy Data"
 author: "Georg Grunsky"
+date: today
 editor: visual
 bibliography: references.bib
 ---
@@ -87,9 +88,15 @@ alldays <- seq(from = as.Date("2016-04-01"),
                to = as.Date("2019-05-27"),
                by = 1)
 
-if (identical(alldays, as.Date(sickness_csv$date))) print("no missing dates") else print("you have to deal w/ missing dates")
+if (identical(alldays, as.Date(sickness_csv$date))) {
+  print("no missing dates")
+  } else {
+  print("you have to deal w/ missing dates")}
 
-if (!anyNA.data.frame(sickness_csv)) print("no missing values") else print("you have to deal w/ missing values")
+if (!anyNA.data.frame(sickness_csv)) {
+  print("no missing values") 
+  } else {
+    print("you have to deal w/ missing values")}
 ```
 
 In dieser Zeitreihe müssen weder mit fehlenden Zeitwerten noch NAs in den Datenpunkten behandelt werden. Die Prüfung der Datenqualität wird somit abgeschlossen.
@@ -123,7 +130,6 @@ rm(sickness_xls,
 
 require(dplyr)
 require(fpp3)
-require(plotly)
 require(ggpubr)
 ```
 
@@ -242,14 +248,12 @@ Wie der u.a. Korrelationsplot von *calls* und *sby_need* zeigt, hatten die Erhö
 #| message: false
 #| warning: false
 
-p <- ggplot(ts_sby, 
+ggplot(ts_sby, 
             aes(x = calls,
                 y = sby_need,
                 colour = as.factor(year(date))
                 )) +
   geom_point()
-
-ggplotly(p)
 ```
 
 Die Abstände im augenscheinlichen "Intercept" betragen zwischen den Jahren jeweils etwa 500 (2016: \~8.000 *calls*, 2017: \~8.500 *calls*, 2018 und 2019: \~9.000 *calls*). Das ist jeweils das fünffache des jährlichen Anstiegs von *n_duty*.
@@ -297,7 +301,6 @@ Wie die nachgestellte Grafik zeigt konnte die Korrelation von *reg_calls* mit *s
 #| message: false
 #| warning: false
 
-ggplotly(p)
 ts_sby %>%
   GGally::ggpairs()
 ```

@@ -1,10 +1,7 @@
-# Folder for hosting all documents for a Data Science Project
+### IU / DataScience / DLMDWPM01
 
-Documents will contain information about the following 
+# Folder for hosting all documents
 
-1. System architecture
-2. Data dictionaries
-3. Reports related to data understanding, modeling
-4. Project management and planning docs
-5. Information obtained from a business owner or client about the project
-6. Docs and presentations prepared to share information about the project 
+1. general basics: documents not only related to this project (references, legal documents, books)
+2. project basics: project related documents
+3. artifacts: documents produced within this project, subfolder structure follows the project directory structure

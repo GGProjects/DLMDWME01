@@ -1,6 +1,7 @@
 ---
 title: "Advanced Model"
 author: "Georg Grunsky"
+date: today
 editor: visual
 bibliography: references.bib
 ---
@@ -13,7 +14,6 @@ bibliography: references.bib
 
 require(dplyr)
 require(fpp3)
-require(plotly)
 require(ggpubr)
 ```
 
@@ -186,14 +186,12 @@ Die benötigte Zeit für die Berechnung der Modelle sowie für das Forecasting k
 #| message: false
 #| warning: false
 
-p <- sby_fc_adv %>%
+sby_fc_adv %>%
   autoplot(ts_sby_test,
            level = NULL) +
   autolayer(ts_sby_train %>% filter(date >= "2019-03-01"), colour = "red" ) +
   labs(y = "sby_need",
        title = "Advanced Models")
-
-ggplotly(p, tooltip = c("y", "x", "colour"))
 
 ```
 
@@ -204,7 +202,7 @@ In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestel
 #| message: false
 #| warning: false
 
-p <- sby_fc_adv %>%
+sby_fc_adv %>%
   filter(.model == "stl" | .model == "ets",
          date <= "2019-06-01") %>%
   autoplot(ts_sby_test,
@@ -213,7 +211,6 @@ p <- sby_fc_adv %>%
   autolayer(ts_sby_train %>% filter(date >= "2019-03-01"), colour = "red", linewidth = 1) +
   labs(y = "calls",
        title = "Advanced Models")
-p
 ```
 
 Im Vergleich von *STL* und *ETS* mit 68% Konfidenzinterwall (+/- eine Standardabweichung) für eine Vorhersage von zwei Monaten sieht man, dass *ETS* mit guter Generalisierung die Spitzen meistens abdeckt, aber die Volatilität nicht hinbekommt. Bei *STL* wird mit zunehmender vorhersagedauer die Verwendung des Konfidenzintervalls unbrauchbar, weil die Streuung enorm ist. Die Entscheidung fällt auf eine Verwendung von *STL* in der Weiterentwicklung des Modells. Zu beachten ist, dass die fehlende Generalisierung nicht durch Verwendung des Konfidenzintervalls erzielt werden kann. Um die Volatilität des Modells zu erhalten ist der Punktschätzer zu verwenden und die Generalisierung anderweitig zu ermöglichen.
@@ -299,12 +296,11 @@ sby_pred <- predict(lm_sby, call_pred_adv, interval = "prediction")
 call_pred_adv$sby <- pmax(0,round(sby_pred[,3],0))
 
 # Anzeige im Vergleich zu tatsächlichem sby_need
-p <- ggplot() +
+ggplot() +
   geom_line(data = filter(ts_sby_test, date > "2019-03-26"), 
             aes(x = date, y = sby_need)) +
   geom_line(data = filter(call_pred_adv, date > "2019-03-26"), 
             aes(x = date, y = sby, colour = "red"))
-ggplotly(p)
 ```
 
 Die Generalisierung wurde erreicht, die Volatilität erhalten. Die Spitzenwerte werden oft nicht erreicht. Das Modell ist dennoch in dieser Form anwendbar. Eine korrekte Vorhersage der Spitzenwerte im Personalbedarf ist, auch wie im Basismodell, immer mit einer Gesamtkostenerhöhung für den Bereitschaftsdienst verbunden, da nahezu immer mehr als 90 Personen als Bedarf vorhergesagt werden.
@@ -376,12 +372,12 @@ sby_pred <- predict(lm_sby, call_pred_adv, interval = "prediction")
 call_pred_adv$sby <- pmax(0,round(sby_pred[,3],0))
 
 # Anzeige im Vergleich zu tatsächlichem sby_need
-p <- ggplot() +
+ggplot() +
   geom_line(data = filter(ts_sby_test, date > "2019-03-26"), 
             aes(x = date, y = sby_need)) +
   geom_line(data = filter(call_pred_adv, date > "2019-03-26"), 
             aes(x = date, y = sby, colour = "red"))
-ggplotly(p)
+
 ```
 
 Die zweite Version sieht deutlich besser aus. Die Modifikation des dienshabenden Personals wird im Code für das Modell implementiert werden müssen, dadurch wird der vorhergesagte Bedarf höher angesetzt und ein Puffer eingebaut.
@@ -423,16 +419,14 @@ Jene Werte, die die allgmeine Modellgüte ausdrücken wurden durch die Anpassung
 
 ### Vergleich der Modelle
 
-| Modell             | RMSE   | MAE    | MeanError | % low | sum low | mean low | max low |
-|--------------------|--------|--------|-----------|-------|---------|----------|---------|
-| Baseline           | 185,94 | 164,48 | 108,64    | 26,23 | 1703,19 | 106,45   | 237,44  |
-| Aktuelles Vorgehen | 160,05 | 125,59 |  46,38    | 47,54 | 5245    | 180,86   | 465     |
-| Advanced Version 1 | 190,31 | 153,36 |  88,47    | 27,12 | 1914    | 119,62   | 271     |
-| Advanced Version 2 | 311,91 | 270,59 | 266,05    |  8,93 |  127    |  25,4    |  88     |  
-
+| Modell             | RMSE   | MAE    | MeanError | \% low | sum low | mean low | max low |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| Baseline           | 185,94 | 164,48 | 108,64    | 26,23  | 1703,19 | 106,45   | 237,44  |
+| Aktuelles Vorgehen | 160,05 | 125,59 | 46,38     | 47,54  | 5245    | 180,86   | 465     |
+| Advanced Version 1 | 190,31 | 153,36 | 88,47     | 27,12  | 1914    | 119,62   | 271     |
+| Advanced Version 2 | 311,91 | 270,59 | 266,05    | 8,93   | 127     | 25,4     | 88      |
 
 Im Vergleich ensprechen der RMSE und MAE der ersten Version dieses Modells dem Baseline-Modell, ansonsten ist das Baseline-Modell jedoch besser zu bewerten als Version 1 des Advanced Modells. Die Version 2 schneidet beim RMSE und MAE wesentlich schlechter ab. Dennoch werden in der zweiten Version deutlich weniger Fälle, zu niedriger Schätzungen verzeichnet. Hier liegt die wesentliche Verbesserung im Advanced-Modell (V2). Es gilt zu klären, wo der Schwerpunkt der Vorhersage liegen soll. Vorerst wird mit der Version 2 des Advanced-Modells weitergearbeitet.
-
 
 ## Speichern modelspezifischer Daten
 

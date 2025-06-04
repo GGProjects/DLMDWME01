@@ -3,10 +3,18 @@
 #' Creates a StandBy Personel forecast for a given period, using a Baseline
 #' model, based on the TSLM algorithm. Predictions are calculated using weekly 
 #' maxima.
+#' 
+#' This model is part of a series of models. Therefore some of the parameters 
+#' are not being used in this particular model.
 #'
 #' @param data Training data used for retraining
+#' @param train_days Number of days used for training (default = 720)
 #' @param train_weeks Number of weeks used for training (default = 104)
 #' @param fcperiod Period to forecast
+#' @param onduty Planned personel on duty for the forecast period
+#' @param dutyoffset Model finetuning; the higher the offset the higher the
+#' prediction (default = 100)
+#' @param confidence Model finetuning; Confidence intervall to use for prediction
 #' @param sby_min Minimum standby personal to be used (default = 35)
 #'
 #' @returns A list, containing the calculation time and the prediction results
@@ -14,10 +22,14 @@
 #'
 #' @examples
 #' @author Georg Grunsky, \email{georg.grunsky@@iu-study.org}
-apply_sby_baseline <- function(data, 
-                               train_weeks = 104, 
-                               fcperiod = "2 months",
-                               sby_min = 35) {
+apply_model <- function(data,
+                        train_weeks = 104,
+                        train_days = 720, 
+                        fcperiod = "2 months",
+                        onduty = 1900,
+                        dutyoffset = 100,
+                        sby_min = 35,
+                        confidence = 90) {
   require(dplyr)
   require(fpp3)
   

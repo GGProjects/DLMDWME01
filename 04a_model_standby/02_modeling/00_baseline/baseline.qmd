@@ -1,6 +1,7 @@
 ---
-title: "Baseline Modelling"
+title: "Baseline Model"
 author: "Georg Grunsky"
+date: today
 editor: visual
 bibliography: references.bib
 ---
@@ -13,7 +14,6 @@ bibliography: references.bib
 
 require(dplyr)
 require(fpp3)
-require(plotly)
 ```
 
 ## Einleitung
@@ -131,14 +131,13 @@ print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " S
 #| message: false
 #| warning: false
 
-p <- sby_basefc %>%
+sby_basefc %>%
   autoplot(ts_sby_test,
            level = NULL) +
   autolayer(ts_sby_train %>% filter(date >= "2019-03-01"), colour = "red" ) +
   labs(y = "sby_need",
        title = "Baseline, erster Versuch")
 
-ggplotly(p, tooltip = c("y", "x", "colour"))
 ```
 
 In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert. Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen erwartbaren positiven Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 180). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
@@ -173,8 +172,6 @@ ts_sby <- ts_sby %>%
 ts_sby %>%
   gg_season(MQ7, period = "1y") +
     labs(title = "Gleitende Quantille")
-
-
 
 ```
 
@@ -249,14 +246,12 @@ print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " S
 
 # Visualisierung der Vorhersage  
 
-p <- sby_basefc %>%
+sby_basefc %>%
   autoplot(ts_sby_test,
            level = NULL) +
   autolayer(ts_sby_train %>% filter(year(week) >= 2018), colour = "red" ) +
   labs(y = "sby_need",
        title = "Baseline, zweiter Versuch")
-
-ggplotly(p, tooltip = c("y", "x", "colour"))
 
 ```
 
@@ -291,7 +286,6 @@ Der u. a. angeführte Residualsplot zeigt ein nahezu optimales Verhalten des Alg
 #| echo: true
 #| message: false
 #| warning: false
-
 
 mod <- select(sby_basemodel, tslm) 
 gg_tsresiduals(mod)
@@ -426,9 +420,9 @@ print(paste0("Größte negative Vorhersage (max low): ", min(eval[eval$sby_diff 
 Die nachfolgende Tabelle zeigt den Vergleich des Baseline Modells zum aktuellen Vorgehen.
 
 | Modell             | RMSE   | MAE    | MeanError | \% low | sum low | mean low | max low |
-|--------------------|--------|--------|-----------|--------|---------|----------|---------|
+|---------|---------|---------|---------|---------|---------|---------|---------|
 | Baseline           | 185,94 | 164,48 | 108,64    | 26,23  | 1703,19 | 106,45   | 237,44  |
-| Aktuelles Vorgehen | 160,05 | 125,59 |  46,38    | 47,54  | 5245    | 180,86   | 465     |
+| Aktuelles Vorgehen | 160,05 | 125,59 | 46,38     | 47,54  | 5245    | 180,86   | 465     |
 
 Wie auch im obigen Vergleich zum Mean "Algorithmus" sind sowohl der RMSE als auch der MAE beim aktuellen Vorgehen besser bewertet. Die Verbesserung von TSLM wird deutlich, wenn es darum geht Tage mit hohem Personalbedarf ausreichend vorherzusagen. So wird bisher etwa bei der Hälfte der Tage zu wenig Bereitschaftspersonal vorgesehen. In Summe mussten in der aktuellen Vorgehensweise, in zwei Monaten Vorhersagezeitraum 5245 zusätzliche Bereitschaftsfahrer:innen aktiviert werden. Mit *TSLM* können die zwei Werte wesentlich verbessert werden.
 

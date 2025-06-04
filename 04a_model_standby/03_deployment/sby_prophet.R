@@ -3,10 +3,13 @@
 #' Creates a StandBy Personel forecast for a given period, using the Prophet
 #' model, based on the FACEBOOK PROPHET algorithm. The model forecasts incoming calls and
 #' then uses a linear correlation to predict the needed standby personel.
-#'
+#' 
+#' This model is part of a series of models. Therefore some of the parameters 
+#' are not being used in this particular model.
 #'
 #' @param data Training data used for retraining
 #' @param train_days Number of days used for training (default = 720)
+#' @param train_weeks Number of weeks used for training (default = 104)
 #' @param fcperiod Period to forecast
 #' @param onduty Planned personel on duty for the forecast period
 #' @param dutyoffset Model finetuning; the higher the offset the higher the
@@ -19,14 +22,14 @@
 #'
 #' @examples
 #' @author Georg Grunsky, \email{georg.grunsky@@iu-study.org}
-apply_sby_prophet <- function(data,
-                              train_weeks = 104,
-                              train_days = 720, 
-                              fcperiod = "2 months",
-                              onduty = 1900,
-                              dutyoffset = 100,
-                              sby_min = 35,
-                              confidence = 90) {
+apply_model <- function(data,
+                        train_weeks = 104,
+                        train_days = 720, 
+                        fcperiod = "2 months",
+                        onduty = 1900,
+                        dutyoffset = 100,
+                        sby_min = 35,
+                        confidence = 90) {
   require(dplyr)
   require(fpp3)
   require(fable.prophet)
@@ -83,7 +86,7 @@ apply_sby_prophet <- function(data,
   
   # neuer Datensatz mit gleitenden Maxima zu Generalisierung (Prediction-Dataset)
   sby_pred_prophet <- sby_fc_prophet %>%
-    as.tibble() %>%
+    as_tibble() %>%
     select(date, .mean) %>%
     mutate(n_duty = duty_pers,
            calls = .mean) %>%
