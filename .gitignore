@@ -10,3 +10,9 @@
 .quarto/
 /.quarto/
 /_freeze/
+*.aux
+*.lof
+*.lot
+*.log
+*.toc
+00-Main.synctex(busy)
