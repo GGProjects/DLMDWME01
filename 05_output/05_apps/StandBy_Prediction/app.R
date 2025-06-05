@@ -99,7 +99,7 @@ ui <- dashboardPage(
                         box(title = span("Vorhersage-Parameter", style = "color: #ffffff; font-weight: bold;"),
                             status = "danger", solidHeader = TRUE, width = 12,
                             fluidRow(
-                                column(6, dateInput("forecast_until", "Vorhersage bis", value = Sys.Date() + 62)),
+                                column(6, dateInput("forecast_until", "Vorhersage bis", value = as.Date("2019-05-27") + 62)),
                                 column(6, numericInput("n_duty_forecast", "Anzahl diensthabendes Personal", value = 1900, min = 0))
                             ),
                             actionButton("predict_btn", "Vorhersage ausführen", class = "btn-danger")
@@ -114,7 +114,7 @@ ui <- dashboardPage(
                             status = "danger", solidHeader = TRUE, width = 6,
                             plotlyOutput("forecast_plot")
                         )
-                    )#,
+                    ) #,
                     # fluidRow(
                     #   box(title = span("Debug", style = "color: #ffffff; font-weight: bold;"),
                     #       status = "danger", solidHeader = TRUE, width = 12,
@@ -152,7 +152,7 @@ server <- function(input, output, session) {
         
         fc <- predict_sby(data = df,
                           model = "prophet",
-                          fcperiod = as.numeric(input$forecast_until - Sys.Date()),
+                          fcperiod = as.numeric(input$forecast_until - as.Date(max(df$date)) + 7),
                           onduty = input$n_duty_forecast)
         
         write.csv(fc, 
@@ -192,7 +192,7 @@ server <- function(input, output, session) {
                paper_bgcolor = 'white')
     })
     
-    # output$debug <- renderPrint(df)
+    # output$debug <- renderPrint(max(df$date))
     
     }
 

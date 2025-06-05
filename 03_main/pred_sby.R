@@ -46,7 +46,14 @@ predict_sby <- function(data,
   source(paste0("../../../04a_model_standby/03_deployment/sby_", model,".R"))  
   
   # Modell anwenden
-  result <- suppressWarnings(apply_model(data = ts_sby))
+  result <- suppressWarnings(apply_model(data = ts_sby,
+                                         train_days = train_days,
+                                         train_weeks = train_weeks, 
+                                         fcperiod = fcperiod,
+                                         onduty = onduty,
+                                         dutyoffset = dutyoffset,
+                                         sby_min = sby_min,
+                                         confidence = confidence))
   
   # Prediction-Time loggen
   write(paste0(Sys.time(), " - Prediction time: ", 
