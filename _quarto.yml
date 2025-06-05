@@ -32,12 +32,23 @@ format:
       - bibliography=totocnumbered
     geometry: left=2cm, right=2cm, top=2cm, bottom=2cm
     fontsize: 11pt
-    linestretch: 1.5
+    linestretch: 1
     mainfont: Arial
     sansfont: Arial
     monofont: Courier New
+    monofontoptions: 
+      - Scale=0.80
     papersize: a4
     # pdf-engine: lualatex
+knitr:
+  opts_chunk: 
+    message: false
+    warning: false
+    tidy: true
+    highlight: true
+    strip.white: true
+    results: 'markup'
+    echo: 'fenced'
 lang: de
 
 

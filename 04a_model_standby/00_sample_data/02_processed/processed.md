@@ -1,12 +1,33 @@
-## List of Processed Datasets
+---
+editor: 
+  markdown: 
+    wrap: sentence
+---
 
+### IU / DataScience / DLMDWPM01
 
-| Processed Dataset Name | Link to the Full Processed Dataset   | Full Processed Dataset Size (MB)  | Link to Report |
-| ---:| ---: | ---: | ---: |
-| Processed Dataset 1 | [link](link/to/processed/dataset1) | 2,000 | [Processed Dataset 1 Report](link/to/report1)|
-| Processed Dataset 2 | [link](link/to/processed/dataset2) | 300 | [Processed Dataset 2 Report](link/to/report2)|
+# List of Processed Datasets
 
+**data_explorative.rda:**
 
-If the link to the full dataset does not apply, provide some information on how to access the full dataset. 
+tbl_ts \[1,152 × 9\] (S3: tbl_ts/tbl_df/tbl/data.frame)
 
-If the data stays in an Azure file storage, please provide the link to the text file with the information of the file storage that has been checked in to the git repository. 
+\$ date : Date\[1:1152\], format: "2016-04-01" "2016-04-02" "2016-04-03" "2016-04-04" ...
+
+\$ calls : num \[1:1152\] 8154 8526 8088 7044 7236 ...
+
+\$ n_duty : num \[1:1152\] 1700 1700 1700 1700 1700 1700 1700 1700 1700 1700 ...
+
+\$ sby_need : num \[1:1152\] 4 70 0 0 0 0 0 0 0 0 ...
+
+\$ reg_calls : num \[1:1152\] 8154 8526 8088 7044 7236 ...
+
+\$ calls_sick : num \[1:1152\] 111.7 133.2 118.9 99.2 114.9 ...
+
+\$ reg_calls_sick: num \[1:1152\] 111.7 133.2 118.9 99.2 114.9 ...
+
+\$ MA8 : num \[1:1152\] NA NA NA 7420 7114 ...
+
+\$ MA2_8 : num \[1:1152\] NA NA NA NA 7267 ...
+
+For a description of the features, refer to [Report](../../../00_docs/03_artifacts/04a_model_standby/01_dataanalysis/explorativ.pdf)

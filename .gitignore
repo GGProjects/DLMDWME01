@@ -5,6 +5,8 @@
 .Rhistory
 .Rprofile
 .RData
+.RDataTmp
+/_freeze
 .quarto/
-
 /.quarto/
+/_freeze/

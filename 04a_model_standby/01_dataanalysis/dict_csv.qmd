@@ -32,7 +32,7 @@ Dateigröße (Kb): ***`{r} fsize`***
 
 Originaldaten gespeichert in: ***`{r} proj_path`***
 
-Aufgrund der geringen Größe wurde der gesamte Datensatz ebenso in *\*\*\* ***00_sample_data/01_raw*** hinterlegt.
+Aufgrund der geringen Größe wurde der gesamte Datensatz ebenso in *\*\*\** **00_sample_data/01_raw**\* hinterlegt.
 
 Der Datensatz enthält ***`{r} nrow(sickness)`*** Datenpunkte mit jeweils ***`{r} length(names(sickness))`*** Merkmalen und wurde als Datentyp ***`{r} class(sickness)`*** angelegt.
 
@@ -53,7 +53,7 @@ Die u.a. Beschreibung der Daten wurde dem Dokument "Zusatzinformationen_DLMDWME0
 Beschreibung der einzelnen Datenmerkmale
 
 | Variable | Beschreibung |
-|:---------------|--------------------------------------------------------|
+|:-----------------------------------|------------------------------------|
 | *...1* | Zähler |
 | *date* | Datum |
 | *n_sick* | Anzahl der Einsatzfahrer, die einen Krankenstand angemeldet haben |
@@ -63,4 +63,3 @@ Beschreibung der einzelnen Datenmerkmale
 | *sby_need* | Anzahl der Ersatzfahrer, die aktiviert werden |
 | *dafted* | Anzahl der zusätzlichen Einsatzfahrer, die aktiviert werden müssen, wenn die Anzahl der Einsatzfahrer im Bereitschaftsdienst nicht ausreicht |
 
-# Literaturverzeichnis

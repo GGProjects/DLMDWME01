@@ -7,9 +7,9 @@ bibliography: references.bib
 ---
 
 ```{r}
-#| include: false
 #| message: false
 #| warning: false
+#| include: false
 
 require(readxl)
 
@@ -54,7 +54,7 @@ Die u.a. Beschreibung der Daten wurde dem Dokument "Zusatzinformationen_DLMDWME0
 Beschreibung der einzelnen Datenmerkmale
 
 | Variable | Beschreibung |
-|:---------------|--------------------------------------------------------|
+|:--------------------|---------------------------------------------------|
 | *...1* | Zähler |
 | *date* | Datum |
 | *n_sick* | Anzahl der Einsatzfahrer, die einen Krankenstand angemeldet haben |
@@ -64,4 +64,3 @@ Beschreibung der einzelnen Datenmerkmale
 | *sby_need* | Anzahl der Ersatzfahrer, die aktiviert werden |
 | *dafted* | Anzahl der zusätzlichen Einsatzfahrer, die aktiviert werden müssen, wenn die Anzahl der Einsatzfahrer im Bereitschaftsdienst nicht ausreicht |
 
-# Literaturverzeichnis

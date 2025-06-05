@@ -1,3 +1,6 @@
-# This folder contains code for modeling and related activities (such as feature engineering, model evaluation etc.)
+### IU / DataScience / DLMDWPM01
 
-You can add detailed description in this markdown related to your specific data science project.
+# Models
+
+This folder contains code for modeling and related activities (such as feature engineering, model evaluation etc.)
+

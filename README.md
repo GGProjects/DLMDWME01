@@ -1,25 +1,12 @@
-# IU / DataScience / DLMDWPM01
+### IU / DataScience
 
-DLMDWPMP01 Coding with Python - **functionfinder**
-==================================================
+# DLMDWPM01
 
-The **main effort** of this package is to gain basic python programming skills
-and therefore solve a simple classification task. This package is designed to
-fulfill the given task and complete the IU Python Module 'DLMDWPMP01'.
+This project is based on a task in the above mentioned module of IUs Master studies 
+class "Data Science".
+By applying a time series model to a dataset, the task was to forecast the need of 
+stand by personnel for a given time period.
 
-
-The **task** was to:
-
-Evaluate ideal functions for a set of training data (1) and assign
-values of a test-dataset to those ideal functions (2)
-
-Used criteria for evaluation:
-
-(1) to match training data and ideal functions:
-minimum SummedSquaredError (SSE)
-
-(2) to match ideal functions and test data:
-precalculated SSE (1) * SquareRoot(2)
-
-After **installing** the package by typing 'pip install -e .' in your console, the
-program 'functionfinder' can be called from the console, using the CLI-command **'ff'**.
+The project was additionally used to create a general directory structure to handle a 
+development project containing machine learning elements, which can be used as a
+template.

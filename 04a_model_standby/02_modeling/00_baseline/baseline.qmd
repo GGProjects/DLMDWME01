@@ -1,6 +1,7 @@
 ---
-title: "Baseline Modelling"
+title: "Baseline Model"
 author: "Georg Grunsky"
+date: today
 editor: visual
 bibliography: references.bib
 ---
@@ -13,7 +14,6 @@ bibliography: references.bib
 
 require(dplyr)
 require(fpp3)
-require(plotly)
 ```
 
 ## Einleitung
@@ -73,12 +73,12 @@ Die Anzahl der Variablen wird gleichhzeitig ebenfalls auf ein benötigtes Mindes
 
 ts_sby_train <- ts_sby %>%
   select(date, sby_need) %>%
-  slice((n() - 62):0)
+  slice(0:(n() - 62))
 
 
 ts_sby_test <- ts_sby %>%
   select(date, sby_need) %>%
-  slice(n():(n() - 61))
+  slice((n() - 61):n())
 ```
 
 ## Modelerstellung
@@ -131,17 +131,16 @@ print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " S
 #| message: false
 #| warning: false
 
-p <- sby_basefc %>%
+sby_basefc %>%
   autoplot(ts_sby_test,
-           level = c(80)) +
+           level = NULL) +
   autolayer(ts_sby_train %>% filter(date >= "2019-03-01"), colour = "red" ) +
   labs(y = "sby_need",
        title = "Baseline, erster Versuch")
 
-ggplotly(p, tooltip = c("y", "x", "colour"))
 ```
 
-In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert. Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen negativen Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 0). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
+In dem o.a. Plot sind die Trainingsdaten Rot und die Testdaten Schwarz dargestellt. Die Vorhersagen durch die einzelnen Algorithmen sind farblich in der Legende kodiert. Wenig überraschend ist die Vorhersage nicht brauchbar. Der *Drift* zeigt einen erwartbaren positiven Trend und *Naïve* eben nur den letzten Wert (in diesem Fall 180). Der *Mean* liegt bei ca. 37 und damit etwa dort, wo gem. explorativer Datenanalyse ein Mindestwert angesetzt werden sollte.
 
 *TSLM* erkennt wochenweise Schwankungen (wie auch im Autokorrelationsplot beobachtet), setzt diese allerdings viel zu gleichmäßig und vor allem zu niedrig an. *Snaïve* kann offenbar den rapiden Wechsel zwischen 0 und auftretenden Spitzen modellieren. Setzt diese Spitzen allerdings zu niedrig an und, viel fataler, nicht dort wo sie tatsächlich auftreten.
 
@@ -174,8 +173,6 @@ ts_sby %>%
   gg_season(MQ7, period = "1y") +
     labs(title = "Gleitende Quantille")
 
-
-
 ```
 
 Im saisonalen Plot sieht man, dass die Spitzenwerte, durch die Glättung, deutlich besser übereinander liegen und auch die monatliche Komponente der Saisonalität ist gut erkennbar. Der u.a. Wert der spektralen Entropy hat sich gegenüber jenem der Zielvariablen, in der explorativen Datenanalyse merkbar verbessert.
@@ -205,11 +202,11 @@ ts_sby_week <- ts_sby %>%
 # Datenaufteilung (61 Tage werden zu 9 Wochen)
 ts_sby_train <- ts_sby_week %>%
   select(week, w_need) %>%
-  slice((n() - 9):0)
+  slice(0:(n() - 9))
 
 ts_sby_test <- ts_sby_week %>%
   select(week, w_need) %>%
-  slice(n():(n() - 9))
+  slice((n() - 9):n())
 
 ```
 
@@ -249,20 +246,18 @@ print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " S
 
 # Visualisierung der Vorhersage  
 
-p <- sby_basefc %>%
+sby_basefc %>%
   autoplot(ts_sby_test,
-           level = c(99)) +
+           level = NULL) +
   autolayer(ts_sby_train %>% filter(year(week) >= 2018), colour = "red" ) +
   labs(y = "sby_need",
        title = "Baseline, zweiter Versuch")
-
-ggplotly(p, tooltip = c("y", "x", "colour"))
 
 ```
 
 Nachdem im Saisonalitätsplot ein Aufwärtstrend klar erkennbar ist, wurde der Trainingszeitraum auf zwei etwa zwei Jahre und der Vorhersagezeitraum auf ein Jahr erweitert. Die Berechnungszeit für das Training und die Vorhersage kann auch bei diesem Ansatz vernachlässigt werden.
 
-Der o.a. Plot folgt dem Farbschema des vorigen Vorhersageplots. Die unterschiedlichen Qualitäten der Vorhersagen sind gut erkennbar. *Drift* und *Naïve* können auch hier wieder verworfen werden. *Mean* gibt einen sehr hohen Durchschnitt aus. *Snaïve* bildet zwar die Saisonalität ab, spiegelt aber interessanterweise hierbei die Werte von 2017 und lässt den Trend unbeachtet.
+Der o.a. Plot folgt dem Farbschema des vorigen Vorhersageplots. Die unterschiedlichen Qualitäten der Vorhersagen sind gut erkennbar. *Drift* und *Naïve* können auch hier wieder verworfen werden. *Mean* gibt einen sehr hohen Durchschnitt aus. *Snaïve* bildet zwar die Saisonalität ab, lässt aber den Trend unbeachtet.
 
 *TSLM* scheint, im aggregierten Ansatz, für ein Baselinemodel zu funktionieren. Die Vorhersage über den Zeitraum von einem Jahr zeigt, dass das Modell sowohl den Trend als auch die Saisonalität aufnimmt. Der erhöhte Bedarf zu Beginn jedes Monats ist deutlich herausgearbeitet. Die, sich mit den Traininsdaten überschneidenden, Vorhersagewerte sind zu niedrig, was durch den plötzlich störkeren Aufwärtstrend erklärbar ist, das Model scheint sich aber im weiteren Verlauf einer möglichen Realität anzunähern. Was bei dieser Variante nicht wiederzufinden ist, sind die Ruhephasen. Im Gegensatz zu aktuellen Vorgehensweise wird bei diesem Modell, außer in den Wintermonaten, sonst nie mit 90 Personen im Bereitschaftsdienst das Auslangen gefunden werden. Das bedeutet, für das Deutsche Rote Kreuz Berlin wird der Bereitschaftsdienst damit in Summe vermutlich teuerer, jedoch besser planbar und es müssen weniger Bereitschaftsfahrer zusätzlich aktiviert werden.
 
@@ -291,7 +286,6 @@ Der u. a. angeführte Residualsplot zeigt ein nahezu optimales Verhalten des Alg
 #| echo: true
 #| message: false
 #| warning: false
-
 
 mod <- select(sby_basemodel, tslm) 
 gg_tsresiduals(mod)
@@ -354,6 +348,84 @@ fc %>%
 
 Ergänzend zu den irreführenden vorangegangenen Gütekriterien bietet sich für den vorliegenden Use Case zuätzlich die Bewertung der Verteilung zur Gütebestimmung an. Der ***Quantile Score*** vergleicht die vorhergesagten mit den aufgetretenen Werten unter der Annahme, dass (gem. gesetztem Parameter) 90% der realen Werte unter der entsprechenden Quantille der Verteilung liegen. Die Messung folgt einer *Pinball Loss Function* [@vermorel_pinball_2012] wobei, bei dem gesetzten 90% Parameter, Fehler die überhalb dieser Marke liegen gewichteter bewertet werden, als jene die unterhalb des Wertes liegen. Der Durchschnitt der einzelnen Bewertungen gibt den Quantile Score, der als absoluter Fehler zu verstehen ist. Je niedriger der Quantile Score, desto besser.
 
+Weitere Messwerte beschreiben zusätzlich die Fähigkeit des Modells den Anforderungen des Use Case hinsichtlich zu geringer Schätzungen gerecht zu werden. Die bisherige Vorgehensweise einer fixen Einteilung von 90 Fahrer:innen im Bereitschaftsdienst wird hier für einen Vergleich ebenfalls berechnet.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Evaluierungsdatensat - Abweichungen aus Forecast und realen Werten "sby_diff"
+eval <- fc %>%
+  filter(.model == "tslm") %>%
+  as.tibble() %>%
+  select(date, .mean) %>%
+  mutate(sby = .mean) %>%
+  filter(!is.na(sby)) %>%
+  as_tsibble(index = date) %>%
+  right_join(ts_sby, by = "date") %>%
+   select(date, sby, sby_need) %>%
+  filter(!is.na(sby)) %>%
+  mutate(sby_diff = sby - sby_need,
+         act_diff = 90 - sby_need) # Abweichungen der bisherigen Vorgehensweise
+
+```
+
+Positive Werte von *sby_diff* und *act_diff* bedeuten, dass zuviel Bereitschaftspersonal vorhergesagt wurde und negative Werte besagen, dass der Bedarf nicht durch die Vorhersage abgedeckt wurde. Generell sind daher positive Werte gegenüber negativen vorzuziehen.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Messgrößen von TSLM
+
+print(paste0("RMSE: ", sqrt(mean(eval$sby_diff^2))))
+
+print(paste0("MAE: ", mean(abs(eval$sby_diff))))
+
+print(paste0("Durchschnittswert der Abweichungen (MeanError): ", mean(eval$sby_diff)))
+
+print(paste0("In ", round(nrow(eval[eval$sby_diff < 0,]) / nrow(eval) * 100, 2), "% der Fälle wurde zuwenig Personal vorhergesagt (% low)"))
+
+print(paste0("Summe der mangelhaften negativen Vorhersagen (sum low): ", sum(eval[eval$sby_diff < 0,]$sby_diff)))
+
+print(paste0("Durchschnittswert der mangelhaften negativen Vorhersagen (mean low): ", mean(eval[eval$sby_diff < 0,]$sby_diff)))
+
+print(paste0("Größte negative Vorhersage (max low): ", min(eval[eval$sby_diff < 0,]$sby_diff)))
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Messgrößen der bisherigen Vorgehensweise
+
+print(paste0("RMSE: ", sqrt(mean(eval$act_diff^2))))
+
+print(paste0("MAE: ", mean(abs(eval$act_diff))))
+
+print(paste0("Durchschnittswert der Abweichungen (MeanError): ", mean(eval$act_diff)))
+
+print(paste0("In ", round(nrow(eval[eval$act_diff < 0,]) / nrow(eval) * 100, 2), "% der Fälle wurde zuwenig Personal vorhergesagt (% low)"))
+
+print(paste0("Summe der mangelhaften negativen Vorhersagen (sum low): ", sum(eval[eval$act_diff < 0,]$act_diff)))
+
+print(paste0("Durchschnittswert der mangelhaften negativen Vorhersagen (mean low): ", mean(eval[eval$act_diff < 0,]$act_diff)))
+
+print(paste0("Größte negative Vorhersage (max low): ", min(eval[eval$sby_diff < 0,]$act_diff)))
+```
+
+Die nachfolgende Tabelle zeigt den Vergleich des Baseline Modells zum aktuellen Vorgehen.
+
+| Modell             | RMSE   | MAE    | MeanError | \% low | sum low | mean low | max low |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| Baseline           | 185,94 | 164,48 | 108,64    | 26,23  | 1703,19 | 106,45   | 237,44  |
+| Aktuelles Vorgehen | 160,05 | 125,59 | 46,38     | 47,54  | 5245    | 180,86   | 465     |
+
+Wie auch im obigen Vergleich zum Mean "Algorithmus" sind sowohl der RMSE als auch der MAE beim aktuellen Vorgehen besser bewertet. Die Verbesserung von TSLM wird deutlich, wenn es darum geht Tage mit hohem Personalbedarf ausreichend vorherzusagen. So wird bisher etwa bei der Hälfte der Tage zu wenig Bereitschaftspersonal vorgesehen. In Summe mussten in der aktuellen Vorgehensweise, in zwei Monaten Vorhersagezeitraum 5245 zusätzliche Bereitschaftsfahrer:innen aktiviert werden. Mit *TSLM* können die zwei Werte wesentlich verbessert werden.
+
 ### Speichern modelspezifischer Daten
 
 ```{r}
@@ -362,16 +434,17 @@ Ergänzend zu den irreführenden vorangegangenen Gütekriterien bietet sich für
 #| warning: false
 
 # Speichern der Sampledaten (hier alles)
-save(ts_sby_week, file = "../../00_sample_data/03_for_modeling/baseline.rda")
+save(ts_sby_week, ts_sby_test, ts_sby_train, eval, ts_sby,
+     file = "../../00_sample_data/03_for_modeling/baseline.rda")
 
 ```
 
 Das Modell selbst wird im Ordner **03_deployment** des Modellverzeichnisses als **sby_baseline.R** Datei abgelegt.
 
 ```{r}
+#| echo: true
 #| message: false
 #| warning: false
-#| include: false
 
 rm(list = ls()) # nach Durchlauf alles löschen
 ```

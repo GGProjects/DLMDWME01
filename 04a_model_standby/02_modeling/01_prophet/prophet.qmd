@@ -1,344 +1,345 @@
 ---
-title: "Baseline Modelling"
+title: "Prophet Model"
 author: "Georg Grunsky"
-format: html
+date: today
 editor: visual
 bibliography: references.bib
 ---
 
-## Prämisse
-
-### Use Case Analyse {#sec-use-case-analyse}
-
-In der vorausgegangenen Use Case Analyse [@grunsky_rettungsdienst_2024] wurden bereits Überlegungen zu Modellansätzen sowie der Bewertung dieser angestellt. Diese wurden, vor allem, in den Abschnitten **Building Models** und **Impact Simulation** behandelt. Die Erkenntnisse werden nachfolgend nochmals zusammengefasst:
-
-In der Use Case Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schienen die Modelle SARIMA und Facebook Prophet den Anforderungen dieses Anwendungsfalles entgegenzukommen.
-
-**SARIMA** (Seasonal Autoregressive Integrated Moving Average) stellt dabei ein klassisches Modell für saisonale Zeitreihenanalysen dar. **Facebook Prophet** wurde ebenso für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
-
-Auf Basis des DRK-Reformtarifvertrags [@deutsches_rotes_kreuz_drk-reformtarifvertrag_2023] wurde geschätzt, dass ein Tag mit, bisher fix eingeteilten, 90 Bereitschaftsfahrer:innen etwa €14.850,- kostet (€165,- pro Bereitschaftsfahrer:in), die an vielen Tagen gar nicht abgerufen werden. Diese Kosten können gut als Messwerte in eine Kostenfunktion für die Güte des Modells integriert werden. Ein deutlich höherer Strafbetrag für eine zu niedrige Schätzung soll den Anforderungen des K.O.-Kriteriums entsprechen, nie zu wenig Bereitschaftspersonal vorzusehen.
-
-### Explorative Datenanalyse
-
-Die Erkenntnisse der explorativen Datenanalyse bieten eine weitere Basis für die Erstellung eines Baseline Models und lassen sich wie folgt zusammenfassen:
-
-1.  Beim Bedarf an StandBy-Personal wurde über die Jahre ein positiver Trend mit einem starken Anstieg seit Beginn des Jahres 2019 beobachtet.
-2.  Ebenso wurde eine
-    1.  starke wochenweise Saisonalität mit Perioden zw. 3-5 Wochen,
-    2.  eine Abhängigkeit zum Tag im Monat mit einem starken Abwärtstrend zu Beginn jeden Monats und Periodenlängen von etwa drei Tagen,
-    3.  sowie eine schwächer ausgeprägte monatliche Saisonalität festgestellt.
-3.  Es wurde außerdem festgehalten, dass eine Abhängigkeit des Bedarfs an StandBy-Personal von der Anzahl krankgemeldeter Bereitschaftsfahrer:innen und der Anzahl eingehender Notrufe plausibel scheint. In der wochenweisen Aggregation der Daten bestätigte das neu entstandene Merkmal call_per_sick (eine Division der Anzahl der Notrufe durch die Anzahl der Krankmeldungen) diese Annahme. Dies wurde vor allem in der logarithmischen Darstellung der Daten ersichtlich.
-
-Die möglichen Prediktoren aus dem letzten Punkt müssten für eine Verwendung als solche selbst erst einzeln vorhergesagt und danach zusammengeführt werden. Ein direktes Lernen der zeitlichen Muster der abhängigen Variable scheint an dieser Stelle für ein Baseline Model effizienter. Die ersten beiden Punkte weisen auf eine Kombination aus Trends und unterschiedlichen Saisonalitäten hin, die in einer Vorhersage berücksichtigt werden muss. Die Verwendung von dem oben beschriebenen Facebook Prophet Alorithmus für ein Baseline Model scheint den Anforderungen zu entsprechen.
-
-## Baseline Model
-
-### Framework
-
-Aufgrund der, oben angeführten, Prämissen wurde für die Erstellung des Baseline Models der **Facebook Prophet** Algorithmus in Kombination mit dem R Package **caret** [@kuhn_caret_nodate-1] gewählt. Letzteres ist als Framework und syntaktisch vereinheitlichte Sammlung von Funktionen für den Prozess der Modellgenerierung zu verstehen. Caret verfügt bereits vorab über viele integrierte Algorithmen, die im Rahmen des Trainings einfach ausgewählt werden können. Außerdem bietet die Dokumentation des caret Package eine gute Hilfestellung und Führung durch diesen Prozess.
-
-Die angebotenen Funktionen umfassen dabei sämtliche Schritte von der Datenvorverarbeitung bis hin zu Modellevaluierung und bieten auch die Möglichkeit Hyperparameter zu testen, sowie benutzerdefinierte Modelle Kostenfunktionen zu integrieren.
-
-Facebook Prophet ist zwar, von Haus aus, nicht in caret integriert, scheint aber eine gute Wahl für ein Baseline Model dieses Anwendungsfalls zu sein. Es wird daher eine eigene Trainingsfunktion geschrieben und diese manuell in den caret workflow eingebettet. Die zeitliche Kreuzvalidierung von Facebook Prophet ist für diese Daten geeigneter als die caret-eigene *createTimeSlices*-Funktion und wird deshalb bereits in die Trainingsfunktion für Prophet mit aufgenommen.
-
 ```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-# Bibliotheken
-library(caret, quietly = TRUE)
-library(prophet, quietly = TRUE)
-library(dbplyr, quietly = TRUE)
-library(ggplot2, quietly = TRUE)
-library(plotly, quietly = TRUE)
-
-```
-
-```{r}
-#| eval: true
-#| echo: true
+#| label: load packages
 #| message: false
 #| warning: false
 #| include: false
 
-# prophet Trainingsfunktion für caret
-train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
-  df <- data.frame(ds = as.Date(x), y = y, stringsAsFactors = F)
-  m <- prophet(df,
-               daily.seasonality = TRUE,
-               weekly.seasonality = TRUE,
-               yearly.seasonality = TRUE,
-               holidays.prior.scale = 0.01) # Holidays haben in den vorliegenden Daten wenig Einfluss, daher deutlich unter den default gesetzt.
-  
-  # cross-validation
-  # cv_results <- cross_validation(m,
-  #                                initial = 365,
-  #                                period = 30,
-  #                                horizon = 60,
-  #                                units = "days")
-  # 
-  # # performance metrics
-  # metrics <- performance_metrics(cv_results)
-  # return(list(model = m, cv_results = cv_results, metrics = metrics))
-  return(m)
-}
-
-
-# prophet Vorhersagefunktion für caret
-predict.prophet <- function(modelFit = m, newdata = x, submodels = NULL) {
-  forecast <- predict(modelFit, newdata)
-  return(forecast)
-}
-
-```
-
-Die Trainings- und die Vorhersagefunktion müssen nun in caret registriert werden.
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: false
-
-# prophet-Methode in caret integrieren
-prophet <- list(
-  label = "Facebook Prophet",
-  library = "prophet",
-  check = NULL,
-  loop = NULL,
-  type = "Regression",
-  parameters = data.frame(
-    parameter = c("n.changepoints",
-                  "changepoint.range",
-                  "changepoint.prior.scale", 
-                  "seasonality.prior.scale"),
-    class = c("numeric", "numeric", "numeric","numeric"),
-    label = c("Number of Changepoints",
-              "Changepoint Range",
-              "Changepoint Prior Scale", 
-              "Seasonality Prior Scale")
-    ),
-  grid = function(x, y, len = NULL, search = NULL) {
-    expand.grid(n.changepoints = 5,
-                changepoint.range = 0.3,
-                changepoint.prior.scale = 0.05,
-                seasonality.prior.scale = 10)
-    },
-  fit = train.prophet,
-  predict = predict.prophet,
-  prob = NULL,
-  levels = NULL,
-  tags = c("Time Series"),
-  sort = NULL,
-  notes = "Integrate facebook prophet model into caret package."
-)
-```
-
-### Kostenfunktion
-
-Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedriege Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: false
-
-# Benutzerdefinierte Kostenfunktion
-lossfunction <- function(data, lev = NULL, model = NULL) {
-  
-  # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
-  stdbyloss <- sum(pmax(data$pred - data$obs,0)) * 165
-  
-  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
-  penalty <- abs(sum(pmin(data$pred - data$obs,0))) * 500000 
-  
-  # Summenbildung für Gesamtkosten
-  loss <- stdbyloss + penalty
-  
-  return(loss)
-}
-
-```
-
-### Pre-Processing {#sec-pre-processing}
-
-#### Reading the csv-file
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: false
-
-require(readr)
-
-sickness_csv <- read_csv(paste0(wd,"/01_data/01_lake/01_use_case_2/sickness_table.csv"), 
-    col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
-```
-
-In diesem Fall ist keine aufwendige Vorverarbeitung der Daten notwendig. Prophet schreibt einen Datensatz vor, der die zeitliche Komponente (*ds*) und die Zeitreihendaten (*y*) abbildet.
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: false
-
-# Datenreduktion gem. Prophet-Vorgaben
-df <- sickness_csv %>% 
-  mutate(ds = as.Date(date)) %>%
-  select(ds,
-         y = sby_need)
-  
-```
-
-### Data Splitting
-
-### Model Training and Tuning
-
-```{r}
-#| eval: false
-#| echo: true
-#| message: false
-#| warning: false
-#| include: false
-
-# Tuning von Hyperparametern, für testen verschiedener Settings
-tune_grid <- expand.grid(n.changepoints = c(5,10,25), # kleiner oder gleich Default
-                         changepoint.range = c(0.3, 0.5, 0.8), #kleiner oder gleich Default
-                         changepoint.prior.scale = c(0.01, 0.05, 0.1), # Default 0.05
-                         seasonality.prior.scale = c(10, 20)) # größer oder gleich Default
-
-
-# lossfunction used as traincontrol w/ caret
-control <- trainControl(method = "timeSlice", 
-                        initialWindow = 365,
-                        horizon = 60,
-                        fixedWindow = TRUE,
-                        summaryFunction = lossfunction)
-
-# Modell trainieren
-system.time(
-  prophet_model <- train(
-    y ~ ds, 
-    data = df, 
-    method = prophet,
-    trControl = trainControl(),
-    tuneGrid = NULL)
-)
-  
-
-
-```
-
-Leider führt die Integration von prophet in caret zu einer Fehlermeldung die auf eine unzureichende Arbeitsspeichergröße hindeutet:
-
-```         
-Error : C stack usage  15928176 is too close to the limit
-```
-
-Der oben angeführte Code wurde deshalb von der Ausführung ausgenommen, jedoch für eine mögliche spätere Verwendung in einer performanten Umgebung aufgehoben.
-
-Der nachfolgende Code bildet die gleiche Vorgehensweise in prophet ohne die Verwendung von caret ab. Für das baseline Model werden hier einfache Werte angenommen ohne ein Hyperparameter-Tuning vorzunehmen.
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: true
-
-
-# prophet Trainingsfunktion 
-m <- prophet(df,
-             daily.seasonality = FALSE,
-             weekly.seasonality = FALSE,
-             yearly.seasonality = TRUE,
-             holidays.prior.scale = 0.01,
-             n.changepoints = 20, # kleiner als Default
-             changepoint.range = 0.3, #kleiner als Default
-             changepoint.prior.scale = 0.1, # Default 0.05
-             seasonality.prior.scale = 10) # größer als Default
-
-# add seasonality
-
-
-
-
-  # cross-validation
-  cv_results <- cross_validation(m,
-                                 initial = 365,
-                                 period = 30,
-                                 horizon = 60,
-                                 units = "days")
-  
-  cv_results$pred <- cv_results$ds - cv_results$cutoff
-```
-
-Kostenfunktion neu schreiben
-
-```{r}
-#| eval: true
-#| echo: true
-#| message: false
-#| warning: false
-#| include: true
-
-# Benutzerdefinierte Kostenfunktion
-lossfunction <- function(pred, obs) {
-  
-  # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
-  stdbyloss <- sum(pmax(pred - obs,0)) * 165
-  
-  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
-  penalty <- abs(sum(pmin(pred - obs,0))) * 500000 
-  
-  # Summenbildung für Gesamtkosten
-  loss <- stdbyloss + penalty
-  
-  return(loss)
-}
-```
-
-```{r}
 require(dplyr)
+require(fpp3)
+require(ggpubr)
+require(fable.prophet)
+```
 
-loss_per_pred <- cv_results %>% 
-  group_by(pred) %>% 
-  summarize(q = lossfunction(pred = yhat, obs = y))
-mean(loss_per_pred$q)
+## Einleitung
 
-loss_per_cutoff <- cv_results %>%
-  group_by(cutoff) %>%
-  summarize(q = lossfunction(pred = yhat, obs = y))
-mean(loss_per_cutoff$q)
+Dieses Dokument beschreibt die Erarbeitung eines weiteren fortschrittlichen Modells. Hierbei wird ebenso auf Erkenntnissen der vorangegangenen Use Case Analyse [@grunsky_rettungsdienst_2024], sowie auf den Ergebnissen der explorativen Datenaanalyse aufgebaut.
+
+Der Fokus liegt auch hierbei auf einer Modellierung der in der explorativen Datenanalyse festgehaltenen Saisonalität der eingegangenen Notrufe (*calls*) und der, ab einem festgelegten Schwellwert, linearen Korrelation dieser zum benötigten Bereitschaftspersonal (*sby_need*) - unter Berücksichtigung der Anzahl des Dienshabenden Personals (*n_duty*).
+
+In der Use Case Analyse wurden die überblicksmäßig die Stärken und Schwächen verschiedener Machine Learning Algorithmen verglichen. Aufgrund der Einfachheit, Interpretierbarkeit und Tauglichkeit für saisonale Zeitreihen mit wenig Features schien sich **Facebook Prophet** als möglicher Algorithmus für den gegenständlichen Anwendungsfall zu eignen. Dieser Algorithmus wurde für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
+
+Der Vorteil von **Facebook Prophet** liegt darin, dass in einer möglichen, zukünftigen Weiterentwicklung des Modells auch Tage mit besonderen Ereignissen, wie zB Veranstaltungen und speziellen Wetterverhältnissen, mit modelliert werden und a priori in eine Vorhersage mit einfliesen könnten.
+
+Im R-package *fpp3* [@hyndman_forecasting_2021] ist zwar *Prophet* als nicht enthalten, kann aber mit laden des Packages *fable.prophet* hinzugefügt werden.
+
+Wie auch in der Entwicklung des Baselinemodells liegt die Herausforderung vor allem im raschen Wechsel zwischen sehr hohem und fast keinem Bedarf an Bereitschaftspersonal. Das empfohlene Mindestmaß an etwa 35 Personen in Bereitschaft wird in der Entwicklung des Modells noch nicht berücksichtigt, aber in einem finalen Deployment als Mindestwert implementiert.
+
+Das gewünschte Ergebnis ist eine möglichst akkurate Vorhersage der Bedarfsspitzen, eine ausreichende Generalisierung des Modells und ein Erhalt der Volatilität um, im Vergleich zu den bisher fix eingesetzten 90 Fahrer:innen, Bereitschaftskosten einsparen zu können.
+
+## Daten laden
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+load(file = "../../00_sample_data/02_processed/data_explorative.rda")
+
+```
+
+## Aufsplitten der Daten in Trianings- und Testdaten
+
+Die Autokorrelation des Merkmals *calls* ist, entsprechend der explorativen Datenanalyse, deutlich besser zu bewerten als jene der Zielvariablen. Dennoch soll auch in diesem Modell die Änderung des saisonalen Verhaltens mit dem Jahreswechsel auf 2019 mit berücksichtigt werden. Der Testdatensatz wird daher auch in diesem Modell mit 2 Monaten angesetzt.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ts_sby_train <- ts_sby %>%
+  select(date, calls, MA2_8, n_duty, sby_need) %>%
+  filter(!is.na(MA2_8)) %>%
+  arrange(date) %>%
+  slice(0:(n() - 62))
+
+ts_sby_test <- ts_sby %>%
+  select(date, calls, MA2_8, n_duty, sby_need) %>%
+  filter(!is.na(MA2_8)) %>%
+  arrange(date) %>%
+  slice((n() - 61):n())
+
+```
+
+## Modelerstellung
+
+### Lineares Modell
+
+Im ersten Schritt wird erneut das lineare Modell umgesetzt, das die Korrelation von *calls* und *sby_need* unter Einfluss von *n_duty* abbildet. Die angeführte Grafik zeigt, wie auch im Advanced-Modell die lineare Abhängigkeit, nach Anpassung der Notrufe aufgrund von *n_duty* und nach Abzug eines einheitlichen Schwellwertes von 8150 Anrufen im Trainingsdatensatz.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+ggplot(ts_sby_train, 
+            aes(x = (pmax(0,(calls - (n_duty - 1700) * 5) - 8150)),
+                y = sby_need
+                )) +
+  geom_point() + 
+  stat_smooth(method = "lm", se = TRUE) +
+  stat_regline_equation(label.x.npc = "center") +
+  labs(x = "modifizierte calls",
+       title = "Korrelation sby_need und modifizierte calls")
 ```
 
 ```{r}
+#| echo: true
+#| message: false
+#| warning: false
 
-future <- make_future_dataframe(m, periods = 60)
-forecast <- predict(m, future)
+lm_sby = lm(sby_need ~ (pmax(0,(calls - (n_duty - 1700) * 5) - 8150)), 
+            data = ts_sby_train)
 
- 
+```
+
+### Prophet Forecast
+
+Der nachfolgende Code erstellt das Prophet-Modell mit einem linearen Trend, sowie jährlichen, monatlichen und wöchentlichen Saisonalitäten.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Training
+t <- system.time(
+  progressr::with_progress(
+    sby_model_prophet <- ts_sby_train %>%
+      model(
+        prophet = prophet(calls ~ growth("linear",
+                                         n_changepoints = 15) +
+                            season(period = 7,
+                                   order = 20,
+                                   type = "additive",
+                            name = "week") +
+                            season(period = 28,
+                                   order = 10,
+                                   type = "multiplicative",
+                                   name = "month") +
+                            season(period = "year",
+                                   order = 15,
+                                   type = "multiplicative",
+                                   name = "year")
+                            )
+      )
+  )
+)
+
+print(paste0(" Die Benötigte Zeit für das Training betrug ", round(t[3],2), " Sekunden."))
 ```
 
 ```{r}
-p1 <- plot(m, forecast)  # Plot der Vorhersage
-ggplotly(p1)
+#| echo: true
+#| message: false
+#| warning: false
 
+# Vorhersage
+t <- system.time(
+  progressr::with_progress(
+    sby_fc_prophet <- sby_model_prophet %>%
+      #forecast(h = "2 months") %>%
+      forecast(h = "11 months")
+  ), gcFirst = TRUE
+)
 
-prophet_plot_components(m, forecast, 
-                        uncertainty = TRUE, 
-                        plot_cap = TRUE, 
-                        weekly_start = 0, 
-                        yearly_start = 0, 
-                        render_plot = TRUE )
+print(paste0(" Die Benötigte Zeit für die Vorhersage war ", round(t[3],2), " Sekunden."))
 ```
 
-### Measuring Performance
+Die benötigte Rechenzeit ist bei *prophet* zwar deutlich höher als bei den vorangegangenen Modellen, liegt aber immer noch im Bereich weniger Sekunden und ist damit gut einsetzbar.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_fc_prophet %>%
+  autoplot(ts_sby_test,
+           level = c(80,90,99), linewidth = 1) +
+  autolayer(ts_sby %>% filter(date >= "2019-03-01"), 
+            colour = "red", linewidth = 1, alpha = 0.5) +
+  labs(y = "calls",
+       title = "Prophet Model")
+```
+
+Die oben angeführte Grafik zeigt die tatsächlich eingegangenen Anrufe in Rot, die gleitende 99% Quantille in Schwarz und die Vorhersage für elf Monate in blauer Farbe.
+
+Die Glättung durch die gleitenden Quantille ist gut erkennbar und hüllt die tatsächlichen Notrufe ein. Die Spitzenwerte werden dadurch erfolgreich abgedeckt, was jedoch auf Kosten der Tage mit niedriegem Bedarf geschieht.
+
+Das Modell schafft es daher mit Masse, die Spitzenwerte abzudecken. In einigen wenigen Fällen gelingt dies trotzdem nicht. Die Saisonalitäten sind deutlich erkennbar, auch wenn der zu erwartende Abfall in den Wintermonaten augenscheinlich zu wenig ausgeprägt ist.
+
+In diesem Plot wurden testhalber auch die Konfidenzinteralle für die 80%, 90% und 99% Quantille dargestellt. Im Gegensatz zum *STL*-Algorithmus des Advanced-Modells, bleiben diese hier auch über einen Vorhersagezeitraum von 11 Monaten relativ konstant und weisen daher ebenso eine Volatilität auf. Diese Volatilität könnte für die Vorhersage von Tagen mit niedrigem Bedarf von Vorteil sein.
+
+#### Evaluierung
+
+Gemäß den gesetzten Trainingsparametern unterscheidet der *prophet* Algorithmus additive und multiplikative Saisonalitäten. Der Unterschied liegt in der Variabilität der Saisonalitäten (multiplikativ ist hierbei variabler als additiv). Diese werden in der unten angeführten Decomposition des Modells gesondert angeführt. Die Residuals weisen augenscheinlich kein Auffälliges "Rest-Pattern" auf, die Modellierung scheint daher die Trainingsdaten gut aufzunehmen.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+
+sby_model_prophet %>%
+  components() %>%
+  autoplot()
+
+```
+
+Der u. a. angeführte Residualsplot zeigt auch bei *Prophet* ein nahezu optimales Verhalten des Algorithmus. In den Residuals ist auf den ersten Blick kein deutliches "Rest-Pattern" in den Daten zu beobachten und genauso wenig im Autokorrelationswert. Die Verteilung der Residuals ist im Vergleich zum Advanced-Modell etwas breiter.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+gg_tsresiduals(sby_model_prophet)
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_fc_prophet %>%
+  accuracy(ts_sby, list(RMSE = RMSE, 
+                        MAE = MAE, 
+                        quantile_score = quantile_score), 
+           probs = 0.68) %>%
+  select(-.type)
+```
+
+Der RMSE von Prohpet-Modells ist etwas schlechter als des des Advanced-Modells. Der MAE ist wiederum recht ähnlich. Hier wird allerdings nur die Vorhersage von *calls* in einem ersten Schuss bewertet, um zu sehen, ob eine weitere Arbeit mit diesem Modell sinnvoll erscheint.
+
+Beim Quantile Score ist der Prophet-Algorithmus vergleichbar mit dem ETS-Algorithmus, der in der Modellierung des Advanced-Modells untersucht wurde, und damit deutlich besser als der des, schlussendlich verwendeten, STL-Algorithmus. Wie auch die o.a. Visualisierung zeigt, bleiben die Quantillen auch in einer weitreichenderen Forecast relativ konstant, wohingegen bei *STL* die unschärfe über die Zeit wesentlich zunahm und eine Verwendung der Quantille unbrauchbar machte.
+
+### Vorhersage sby_need
+
+Im Advanced-Modell wurde versucht einen Puffer für die Spitzenwerte anhand eines gleitenden Maximums über die vorhergesagten Notrufe zu erreichen. Da bei *Prophet* die Verwendung von Konfidenzintervallen möglich erscheint, wird in diesem Ansatz der Puffer durch Verwendung der 90% Quantille als Vorhersagewert erreicht. Das Schöne hierbei ist, dass der zu verwendente Prozentsatz für die Berechnung einem codierten Modell auch als Hyperparameter mitgegeben werden kann.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+sby_fc_prophet <- sby_fc_prophet %>%
+  mutate(.mean = hilo(calls,90)$upper)
+```
+
+Wie auch im Advance-Modell wird, zum Vergleich der Ergebnisse, die Höhe des diensthabenden Personals um 100 reduziert. Damit wird die Anzahl des vorhergesagten Bereitschaftspersonals etwas angehoben. Auch die Höhe des vorgesehenen Bereitschaftspersonals wird für das Modell ein verpflichtender Parameter sein. Die Planungsstelle für den Bereitschaftsdienst, sollte aber im Vorhinein wissen, wie viel Personal im vorherzusagenden Zeitraum regulär im Dienst sein soll.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# vorgesehenes diensthabendes Personal
+duty_pers <- 1800
+
+# neuer Datensatz mit gleitenden Maxima zu Generalisierung (Prediction-Dataset)
+call_pred_adv <- sby_fc_prophet %>%
+  as.tibble() %>%
+  select(date, .mean) %>%
+  mutate(n_duty = duty_pers,
+         calls = .mean) %>%
+  filter(!is.na(calls)) %>%
+  as_tsibble(index = date)
+
+# Anwendung lineares Modell und hinzufügen von sby zu Prediction-Dataset
+sby_pred <- predict(lm_sby, call_pred_adv, interval = "prediction")
+call_pred_adv$sby <- pmax(0,round(sby_pred[,3],0))
+
+# Anzeige im Vergleich zu tatsächlichem sby_need
+ggplot() +
+  geom_line(data = filter(ts_sby_test, date > "2019-03-26"), 
+            aes(x = date, y = sby_need)) +
+  geom_line(data = filter(call_pred_adv, date > "2019-03-26"), 
+            aes(x = date, y = sby, colour = "red"))
+```
+
+## Evaluierung sby_need
+
+Nach dem es sich bei dem Prediction-Dataset nicht mehr um eine Forecast gem. *fpp3*-Package handelt, können die dort bereitgestellten Funktionen zur Bewertung nicht mehr angewandt werden. Für die Vergleichbarkeit mit dem Baselinemodell und ggf. weiteren fortgeschrittenen Modellen werden einige Bewertungskriterien daher "manuell" bereitgestellt.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Evaluierungsdatensat - Abweichungen aus Forecast und realen Werten "sby_diff"
+eval <- call_pred_adv %>%
+  right_join(ts_sby_test, by = "date") %>%
+   select(date, sby, sby_need) %>%
+  filter(!is.na(sby)) %>%
+  mutate(sby_diff = sby - sby_need)
+```
+
+Positive Werte von *sby_diff* bedeuten, dass zuviel Bereitschaftspersonal vorhergesagt wurde und negative Werte besagen, dass der Bedarf nicht durch die Vorhersage abgedeckt wurde. Generell sind daher positive Werte gegenüber negativen vorzuziehen.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+print(paste0("RMSE: ", sqrt(mean(eval$sby_diff^2))))
+
+print(paste0("MAE: ", mean(abs(eval$sby_diff))))
+
+print(paste0("Durchschnittswert der Abweichungen: ", mean(eval$sby_diff)))
+
+print(paste0("In ", round(nrow(eval[eval$sby_diff < 0,]) / nrow(eval) * 100, 2), "% der Fälle wurde zuwenig Personal vorhergesagt"))
+
+print(paste0("Summe der mangelhaften negativen Vorhersagen: ", sum(eval[eval$sby_diff < 0,]$sby_diff)))
+
+print(paste0("Durchschnittswert der mangelhaften negativen Vorhersagen: ", mean(eval[eval$sby_diff < 0,]$sby_diff)))
+
+print(paste0("Größte negative Vorhersage: ", min(eval[eval$sby_diff < 0,]$sby_diff)))
+```
+
+### Vergleich der Modelle
+
+| Modell             | RMSE   | MAE    | MeanError | \% low | sum low | mean low | max low |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| Baseline           | 185,94 | 164,48 | 108,64    | 26,23  | 1703,19 | 106,45   | 237,44  |
+| Aktuelles Vorgehen | 160,05 | 125,59 | 46,38     | 47,54  | 5245    | 180,86   | 465     |
+| Advanced Version 1 | 190,31 | 153,36 | 88,47     | 27,12  | 1914    | 119,62   | 271     |
+| Advanced Version 2 | 311,91 | 270,59 | 266,05    | 8,93   | 127     | 25,4     | 88      |
+| Prophet (Q90)      | 356,43 | 328,61 | 328,03    | 1,61   | 18      | 18       | 18      |
+| Prophet (Q80)      | 299,07 | 268,85 | 264,82    | 3,23   | 125     | 62,5     | 81      |
+
+Für den Vergleich wurde der Prophet Algorithmus in zwei Versionen ausgeführt. In beiden Fällen wurde mit dem Konfidenzintervall gearbeitet, einmals mit der 80% Quantille und einmal mit der 90% Quantille. Die obige Tabelle zeigt, dass das Prophet-Modell in Verwendung des 80% Konfidenzintervalls ähnliche RMSE, MAE und MeanError Werte aufweis, wie das Advanced Model (V2), jedoch deutlich weniger oft zu niedrig schätzt. Man sieht auch gut, welchen Einfluss die Parametrisierung des Konfidenzintervalls auf das Ergebnis hat. Bei dem 90% Konfidenzintervall wird überhaut nur einmal zu niedrig geschätzt, dafür sind eben die anderen Fehlerwerte deutlich schlechter. Die o.a. Grafik der Vorhersage lässt im Vergleich zu anderen Modellen jedoch erkennten, dass es Prophet, aufgrund der modellierten Volatilität schafft, in den Wintermonaten den Mindestbedarf wieder zu senken.
+
+Der Quantillen-Parameters wird im deployten Modell flexibel setzbar sein. Der Defaultwert liegt bei 90% Konfidenzintervall.
+
+## Speichern modelspezifischer Daten
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+# Speichern der Sampledaten (hier alles)
+save(ts_sby_test, ts_sby_train, eval, call_pred_adv, ts_sby,
+     file = "../../00_sample_data/03_for_modeling/prophet.rda")
+
+```
+
+Das Modell selbst wird im Ordner **03_deployment** des Modellverzeichnisses als **sby_model_prophet.R** Datei abgelegt.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+rm(list = ls()) # nach Durchlauf alles löschen
+```
+
+## Literaturverzeichnis

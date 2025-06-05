@@ -1,3 +1,6 @@
+### IU / DataScience / DLMDWPM01
+
 # This folder contains code for model deployment
 
-You can add detailed description in this markdown related to your specific data science project.
+The functions to execute every model have the same function name. Therefore they can be
+easily combined into the pred_sby function in the main program directorey

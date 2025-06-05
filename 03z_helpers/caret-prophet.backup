@@ -1,0 +1,319 @@
+---
+title: "Prophet und Caret"
+author: "Georg Grunsky"
+format: html
+editor: visual
+bibliography: references.bib
+---
+
+**Facebook Prophet** wurde für Zeitreihenvorhersagen entwickelt und verwendet dabei ein zusammengesetztes Modell aus Trend, Saisonalität und speziellen Ereignissen in Zeitreihen. [@taylor_forecasting_2017].
+
+### Framework
+
+Der **Facebook Prophet** Algorithmus wird in Kombination mit dem R Package **caret** [@kuhn_caret_nodate-1] gewählt. Letzteres ist als Framework und syntaktisch vereinheitlichte Sammlung von Funktionen für den Prozess der Modellgenerierung zu verstehen. Caret verfügt bereits vorab über viele integrierte Algorithmen, die im Rahmen des Trainings einfach ausgewählt werden können. Außerdem bietet die Dokumentation des caret Package eine gute Hilfestellung und Führung durch diesen Prozess.
+
+Die angebotenen Funktionen umfassen dabei sämtliche Schritte von der Datenvorverarbeitung bis hin zu Modellevaluierung und bieten auch die Möglichkeit Hyperparameter zu testen, sowie benutzerdefinierte Modelle Kostenfunktionen zu integrieren.
+
+Facebook Prophet ist zwar, von Haus aus, nicht in caret integriert. Es wird daher eine eigene Trainingsfunktion geschrieben und diese manuell in den caret workflow eingebettet. Die zeitliche Kreuzvalidierung von Facebook Prophet ist für diese Daten geeigneter als die caret-eigene *createTimeSlices*-Funktion und wird deshalb bereits in die Trainingsfunktion für Prophet mit aufgenommen.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# Bibliotheken
+library(caret, quietly = TRUE)
+library(prophet, quietly = TRUE)
+library(dbplyr, quietly = TRUE)
+library(ggplot2, quietly = TRUE)
+library(plotly, quietly = TRUE)
+
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# prophet Trainingsfunktion für caret
+train.prophet <- function(x, y, wts, param, lev, last, weights, classProbs) {
+  df <- data.frame(ds = as.Date(x), y = y, stringsAsFactors = F)
+  m <- prophet(df,
+               daily.seasonality = TRUE,
+               weekly.seasonality = TRUE,
+               yearly.seasonality = TRUE,
+               holidays.prior.scale = 0.01) # Holidays haben in den vorliegenden Daten wenig Einfluss, daher deutlich unter den default gesetzt.
+  
+  # cross-validation
+  # cv_results <- cross_validation(m,
+  #                                initial = 365,
+  #                                period = 30,
+  #                                horizon = 60,
+  #                                units = "days")
+  # 
+  # # performance metrics
+  # metrics <- performance_metrics(cv_results)
+  # return(list(model = m, cv_results = cv_results, metrics = metrics))
+  return(m)
+}
+
+
+# prophet Vorhersagefunktion für caret
+predict.prophet <- function(modelFit = m, newdata = x, submodels = NULL) {
+  forecast <- predict(modelFit, newdata)
+  return(forecast)
+}
+
+```
+
+Die Trainings- und die Vorhersagefunktion müssen nun in caret registriert werden.
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# prophet-Methode in caret integrieren
+prophet <- list(
+  label = "Facebook Prophet",
+  library = "prophet",
+  check = NULL,
+  loop = NULL,
+  type = "Regression",
+  parameters = data.frame(
+    parameter = c("n.changepoints",
+                  "changepoint.range",
+                  "changepoint.prior.scale", 
+                  "seasonality.prior.scale"),
+    class = c("numeric", "numeric", "numeric","numeric"),
+    label = c("Number of Changepoints",
+              "Changepoint Range",
+              "Changepoint Prior Scale", 
+              "Seasonality Prior Scale")
+    ),
+  grid = function(x, y, len = NULL, search = NULL) {
+    expand.grid(n.changepoints = 5,
+                changepoint.range = 0.3,
+                changepoint.prior.scale = 0.05,
+                seasonality.prior.scale = 10)
+    },
+  fit = train.prophet,
+  predict = predict.prophet,
+  prob = NULL,
+  levels = NULL,
+  tags = c("Time Series"),
+  sort = NULL,
+  notes = "Integrate facebook prophet model into caret package."
+)
+```
+
+### Kostenfunktion
+
+Wie bereits in @sec-use-case-analyse beschrieben, nimmt die unten angeführte Kostenfunktion Bezug auf entstandene (jedoch nicht abgerufene) StandBy-Kosten, sowie Strafkosten für zu niedriege Vorhersagen. Die Werte werden zum Vergleich über die Testperiode aufsummiert.
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# Benutzerdefinierte Kostenfunktion
+lossfunction <- function(data, lev = NULL, model = NULL) {
+  
+  # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
+  stdbyloss <- sum(pmax(data$pred - data$obs,0)) * 165
+  
+  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
+  penalty <- abs(sum(pmin(data$pred - data$obs,0))) * 500000 
+  
+  # Summenbildung für Gesamtkosten
+  loss <- stdbyloss + penalty
+  
+  return(loss)
+}
+
+```
+
+### Pre-Processing {#sec-pre-processing}
+
+#### Reading the csv-file
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+require(readr)
+
+sickness_csv <- read_csv(paste0(wd,"/01_data/01_lake/01_use_case_2/sickness_table.csv"), 
+    col_types = cols(date = col_datetime(format = "%Y-%m-%d")))
+```
+
+In diesem Fall ist keine aufwendige Vorverarbeitung der Daten notwendig. Prophet schreibt einen Datensatz vor, der die zeitliche Komponente (*ds*) und die Zeitreihendaten (*y*) abbildet.
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# Datenreduktion gem. Prophet-Vorgaben
+df <- sickness_csv %>% 
+  mutate(ds = as.Date(date)) %>%
+  select(ds,
+         y = sby_need)
+  
+```
+
+### Data Splitting
+
+### Model Training and Tuning
+
+```{r}
+#| eval: false
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# Tuning von Hyperparametern, für testen verschiedener Settings
+tune_grid <- expand.grid(n.changepoints = c(5,10,25), # kleiner oder gleich Default
+                         changepoint.range = c(0.3, 0.5, 0.8), #kleiner oder gleich Default
+                         changepoint.prior.scale = c(0.01, 0.05, 0.1), # Default 0.05
+                         seasonality.prior.scale = c(10, 20)) # größer oder gleich Default
+
+
+# lossfunction used as traincontrol w/ caret
+control <- trainControl(method = "timeSlice", 
+                        initialWindow = 365,
+                        horizon = 60,
+                        fixedWindow = TRUE,
+                        summaryFunction = lossfunction)
+
+# Modell trainieren
+system.time(
+  prophet_model <- train(
+    y ~ ds, 
+    data = df, 
+    method = prophet,
+    trControl = trainControl(),
+    tuneGrid = NULL)
+)
+  
+
+
+```
+
+Leider führt die Integration von prophet in caret zu einer Fehlermeldung die auf eine unzureichende Arbeitsspeichergröße hindeutet:
+
+```         
+Error : C stack usage  15928176 is too close to the limit
+```
+
+Der oben angeführte Code wurde deshalb von der Ausführung ausgenommen, jedoch für eine mögliche spätere Verwendung in einer performanten Umgebung aufgehoben.
+
+Der nachfolgende Code bildet die gleiche Vorgehensweise in prophet ohne die Verwendung von caret ab. Für das baseline Model werden hier einfache Werte angenommen ohne ein Hyperparameter-Tuning vorzunehmen.
+
+## Prophet ohne Caret
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: true
+
+
+# prophet Trainingsfunktion 
+m <- prophet(df,
+             daily.seasonality = FALSE,
+             weekly.seasonality = FALSE,
+             yearly.seasonality = TRUE,
+             holidays.prior.scale = 0.01,
+             n.changepoints = 20, # kleiner als Default
+             changepoint.range = 0.3, #kleiner als Default
+             changepoint.prior.scale = 0.1, # Default 0.05
+             seasonality.prior.scale = 10) # größer als Default
+
+# add seasonality
+
+
+
+
+  # cross-validation
+  cv_results <- cross_validation(m,
+                                 initial = 365,
+                                 period = 30,
+                                 horizon = 60,
+                                 units = "days")
+  
+  cv_results$pred <- cv_results$ds - cv_results$cutoff
+```
+
+Kostenfunktion neu schreiben
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| include: true
+
+# Benutzerdefinierte Kostenfunktion
+lossfunction <- function(pred, obs) {
+  
+  # Kosten pro zu hoch geschätzter Bereitschaft in Höhe von €165,- 
+  stdbyloss <- sum(pmax(pred - obs,0)) * 165
+  
+  # Deutlich höherer Strafbetrag für zu niedrige Schätzung. (initial 5000)
+  penalty <- abs(sum(pmin(pred - obs,0))) * 500000 
+  
+  # Summenbildung für Gesamtkosten
+  loss <- stdbyloss + penalty
+  
+  return(loss)
+}
+```
+
+```{r}
+require(dplyr)
+
+loss_per_pred <- cv_results %>% 
+  group_by(pred) %>% 
+  summarize(q = lossfunction(pred = yhat, obs = y))
+mean(loss_per_pred$q)
+
+loss_per_cutoff <- cv_results %>%
+  group_by(cutoff) %>%
+  summarize(q = lossfunction(pred = yhat, obs = y))
+mean(loss_per_cutoff$q)
+```
+
+```{r}
+
+future <- make_future_dataframe(m, periods = 60)
+forecast <- predict(m, future)
+
+ 
+```
+
+```{r}
+p1 <- plot(m, forecast)  # Plot der Vorhersage
+ggplotly(p1)
+
+
+prophet_plot_components(m, forecast, 
+                        uncertainty = TRUE, 
+                        plot_cap = TRUE, 
+                        weekly_start = 0, 
+                        yearly_start = 0, 
+                        render_plot = TRUE )
+```
