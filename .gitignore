@@ -15,4 +15,7 @@
 *.lot
 *.log
 *.toc
+*.bbl
+*.gz
+*.blg
 00-Main.synctex(busy)

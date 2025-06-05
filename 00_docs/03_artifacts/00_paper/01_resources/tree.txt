@@ -4,12 +4,11 @@ DMLDWME01
 |   +---01_general_basics          # unspezifische Grundlagen
 |   +---02_project_basics          # projekspezifische Grundlagen
 |   \---03_artifacts              /# Projektprodukte
-|       +---01_paper               # Latex Files dieser Arbeit
-|       +---02_data_reports        # Reports der Datenanalyse
-|       |   \---00_dictonaries     # Datenschema Beschreibungen
-|       |
-|       \---03_model_reports       # Reports der Modellerstellung
-|       \---[...models]            # Subfolder einzelner Modelle
+|       +---00_paper               # Latex Files dieser Arbeit
+|       +---04a_model_standby      # Dokumentation eines Modells
+|           +---01_dataanalysis    # Reports der Datenanalyse
+|           \---02_modeling        # Reports der Modellerstellung
+|                \---[...models]   # Subfolder einzelner Modelle
 |   
 +---01_data                        # Datenbereitstellung 
 |   +---01_lake                    # Data Lake - Rohdatenspeicher
@@ -23,9 +22,7 @@ DMLDWME01
 |
 +---03[a-y]_...                    # einzelne Packages der Anwendung
 |   
-+---02z_code_snippets              # Hilfscode - wird bei Abschluss entfernt
-|   +---00_own_snippets            # Eigene Hilfscodesammlung
-|   \---[...other snippets]        # Hilfscode anderer Quellen
++---03z_helpers                    # Hilfscode - wird bei Abschluss entfernt
 |
 +---04a_model_standby             /# 04[a-z] Ordner der ML-Modelle    
 |   +---00_sample_data             # Beispieldaten zur Dokumentation 
@@ -36,14 +33,14 @@ DMLDWME01
 |   +---01_dataanalysis            # Code explorativer Datenanalyse
 |   +---02_modeling                # Code der Modellerstellung
 |   \---03_deployment              # Code des Modeldeployments
-|       \---model_version_final.R  # Namenskonvention aktueller Modell-Version
+|       \---[modelname].R          # projektspezifische Namenskonvention
 |
-+---03_tests                       # Unittests
++---05_output                      # Generierte Ergebnisse
+|  +---01_documentation            # Softwaredokumentation
+|  +---02_data                     # Datenausgabe
+|  +---03_figures                  # Grafiken
+|  +---04_logs                     # Logausgaben
+|  \---05_apps                     # User Interfaces   
 |
-\---04_output                      # Generierte Ergebnisse
-   +---01_documentation            # Softwaredokumentation
-   +---02_data                     # Datenausgabe
-   +---03_figures                  # Grafiken
-   +---04_logs                     # Logausgaben
-   \---05_apps                     # User Interfaces
+\---06_tests                       # Unittests
  

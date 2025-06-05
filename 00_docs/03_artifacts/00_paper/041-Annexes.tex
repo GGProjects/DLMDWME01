@@ -1,11 +1,115 @@
-\chapter{Annexes}
+%%%%%%%%%%%%%%%% Datenbeschriftung %%%%%%%%%%%%%
+\includepdf[
+  pages=2,
+  pagecommand={
+    \chapter{Annexes}    
+    \section{Datenbeschreibung}
+    \label{app:dict}
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 -1cm,
+  trim={1.5cm 2.5cm 1.5cm 5cm},
+  clip
+]{../04a_model_standby/01_dataanalysis/dict_csv.pdf}
 
-
-\section*{Anhang: Detaillierte Daten (Seiten 3 und 4)}
+%%%%%%%%%%%%%%%% explorative Datenanalyse %%%%%%%%%%%%%
+\includepdf[
+  pages=2,
+  pagecommand={
+    \section{explorative Datenanalyse}
+    \label{app:explore}
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 -1cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/01_dataanalysis/explorativ.pdf}
 
 \includepdf[
-  pages=3,
-  pagecommand={\thispagestyle{empty}},
-  scale=0.9,
-  offset=0 -1cm
-]{../04a_model_standby/01_dataanalysis/dict_csv.pdf}
+  pages=3-,
+  pagecommand={
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 0cm,
+  trim={1.5cm 2cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/01_dataanalysis/explorativ.pdf}
+
+%%%%%%%%%%%%%%%% Baseline %%%%%%%%%%%%%
+\includepdf[
+  pages=2,
+  pagecommand={
+    \section{Baseline Model}
+    \label{app:baseline}
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 -1cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/00_baseline/baseline.pdf}
+
+\includepdf[
+  pages=3-,
+  pagecommand={
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 0cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/00_baseline/baseline.pdf}
+
+
+%%%%%%%%%%%%%%%% Advanced %%%%%%%%%%%%%
+\includepdf[
+  pages=2,
+  pagecommand={
+    \section{Adanced Model}
+    \label{app:adv}
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 -1cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/01_advanced/advanced.pdf}
+
+\includepdf[
+  pages=3-,
+  pagecommand={
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 0cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/01_advanced/advanced.pdf}
+
+%%%%%%%%%%%%%%%% Prophet %%%%%%%%%%%%%
+\includepdf[
+  pages=2,
+  pagecommand={
+    \section{Prophet Model}
+    \label{app:prophet}
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 -1cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/01_prophet/prophet.pdf}
+
+\includepdf[
+  pages=3-,
+  pagecommand={
+    \thispagestyle{plain}
+  },
+  scale=0.7,
+  offset=0 0cm,
+  trim={1.5cm 2.5cm 1.5cm 2cm},
+  clip
+]{../04a_model_standby/02_modeling/01_prophet/prophet.pdf}
