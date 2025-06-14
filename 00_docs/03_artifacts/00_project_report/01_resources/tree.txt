@@ -2,9 +2,11 @@ DMLDWME01
 |
 +---00_docs                        # Dokumente
 |   +---01_general_basics          # unspezifische Grundlagen
-|   +---02_project_basics          # projekspezifische Grundlagen
+|   +---02_project_basics          # projekspezifische Grundlagen, zB:
+|       +---Use Case Analyse       #   + Use Case Analyse
+|       \---Projektplan            #   + Projektplan
 |   \---03_artifacts              /# Projektprodukte
-|       +---00_paper               # Latex Files dieser Arbeit
+|       +---00_project_report      # Projektreport (diese Arbeit)
 |       +---04a_model_standby      # Dokumentation eines Modells
 |           +---01_dataanalysis    # Reports der Datenanalyse
 |           \---02_modeling        # Reports der Modellerstellung

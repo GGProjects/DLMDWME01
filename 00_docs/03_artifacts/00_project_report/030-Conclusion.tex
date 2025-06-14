@@ -1,0 +1,17 @@
+\chapter{Zusammenfassung}
+
+Die Herausforderung der gegenständlichen Aufgabenstellung in der Entwicklung eines Modells zur Lösung eines Regressionsproblems für Zeitreihendaten, die 
+
+\begin{enumerate}
+ \itemsep-8pt
+ \item einer sehr hohen Volatilität unterliegen und beide Extreme bestmöglich vorhergesagt werden sollten und
+ \item an der optimalen Grenze zwischen Trainings- und Testdaten einem Datendrift unterliegen
+\end{enumerate}
+
+Zur Begegnung dieser Herausforderung wurden verschiedene Modellansätze gewählt wobei schlussendlich der \textit{Facebook Prophet} Algorithmus am erfolgversprechensten erschien. In der Umsetzung wurden durch den Algorithmus die Saisonalitäten der eingehenden Notrufe gelernt und diese anschließend durch die lineare Korrelation mit der Zielvariablen zur Vorhersage derselbigen herangezogen. Zur Erreichung der linearen Korrelation wurden die eingehenden Anrufe erst ab einer  gewissen Anzahl gewertet und durch die Höhe des diensthabenden Personals modifiziert. Eine Generalisierung des Modells konnte über die Verwendung des 90\% Konfidenzintervalls erzielt werden, das eine tendenziell zu hohe Vorhersage unterstützt und der Anforderung, nie zu wenig Bereitschaftspersonal vorzusehen, entgegen kommt.
+
+\textit{Prophet} bietet weiters die Möglichkeit, Trendwenden und besondere vergangene und zukünftige Ereignisse in eine Prognose mit einzukalkulieren und schafft somit die Voraussetzung in der Weiterentwicklung der Modelle diese Fähigkeiten für die Einbindung weiterer denkbarer Prädiktoren zu nutzen. Solche wurden in Punkt \ref{dp} Data Processing und der vorangegangenen Use Case Analyse diskutiert.
+
+Für die Implementierung der Umsetzung wurde die erhöhte Verantwortung des Personals der Planungsstelle und damit einhergehende eine möglicherweise fehlende Nutzerakzeptanz als ein wichtiges und zu behandelndes Risiko dargelegt.
+
+Der Finalisierung des Projektes sollte die Gütebewertung der Modelle auf Basis einer, mit dem Präsidium gemeinsam definierten, Kostenfunktion erneut durchgeführt werden und danach über ein Hyperparametertraining das beste Setting für das anzuwendende Modell gefunden werden. Außerdem wäre es ratsam auch ein automatisiertes modell- und geschäftszentriertes Monitoring umzusetzen. 
